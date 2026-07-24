@@ -8,6 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 
 from app.core.config import settings
+from app.core.cors import apply_cors_headers
 from app.core.database import engine
 from app.core.exception_handlers import register_exception_handlers
 from app.core.logging_config import configure_logging
@@ -54,6 +55,14 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+
+@app.middleware("http")
+async def ensure_cors_on_all_responses(request, call_next):
+    """Backstop: attach CORS headers when an inner layer omitted them."""
+    response = await call_next(request)
+    return apply_cors_headers(request, response)
+
 
 # CORS must be the outermost middleware so browser preflight (OPTIONS) succeeds.
 app.add_middleware(

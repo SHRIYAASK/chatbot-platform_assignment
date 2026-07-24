@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useToast } from "../../../shared/hooks/useToast.jsx";
 import { mapApiError, mapNetworkError } from "../../../shared/utils/apiError.js";
 import {
@@ -10,8 +10,15 @@ import {
 
 export function useProjects() {
   const { showError, showSuccess } = useToast();
+  const showErrorRef = useRef(showError);
+  const showSuccessRef = useRef(showSuccess);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    showErrorRef.current = showError;
+    showSuccessRef.current = showSuccess;
+  }, [showError, showSuccess]);
 
   const loadProjects = useCallback(async () => {
     setLoading(true);
@@ -19,11 +26,11 @@ export function useProjects() {
       const data = await fetchProjects();
       setProjects(data.projects || []);
     } catch (error) {
-      showError(mapNetworkError(error, "Failed to load projects."));
+      showErrorRef.current(mapNetworkError(error, "Failed to load projects."));
     } finally {
       setLoading(false);
     }
-  }, [showError]);
+  }, []);
 
   useEffect(() => {
     loadProjects();
@@ -33,10 +40,12 @@ export function useProjects() {
     try {
       const project = await createProject(payload);
       setProjects((current) => [project, ...current]);
-      showSuccess("Project created successfully.");
+      showSuccessRef.current("Project created successfully.");
       return project;
     } catch (error) {
-      showError(mapApiError(error.response?.status, error.response?.data?.detail, "Failed to create project."));
+      showErrorRef.current(
+        mapApiError(error.response?.status, error.response?.data?.detail, "Failed to create project.")
+      );
       throw error;
     }
   };
@@ -49,10 +58,12 @@ export function useProjects() {
           item.id === projectId ? { ...project, summary: item.summary ?? project.summary } : item
         )
       );
-      showSuccess("Project updated successfully.");
+      showSuccessRef.current("Project updated successfully.");
       return project;
     } catch (error) {
-      showError(mapApiError(error.response?.status, error.response?.data?.detail, "Failed to update project."));
+      showErrorRef.current(
+        mapApiError(error.response?.status, error.response?.data?.detail, "Failed to update project.")
+      );
       throw error;
     }
   };
@@ -61,10 +72,11 @@ export function useProjects() {
     try {
       await deleteProject(projectId);
       setProjects((current) => current.filter((item) => item.id !== projectId));
-      showSuccess("Project deleted successfully.");
+      showSuccessRef.current("Project deleted successfully.");
     } catch (error) {
-      showError(mapApiError(error.response?.status, error.response?.data?.detail, "Failed to delete project."));
-      throw error;
+      showErrorRef.current(
+        mapApiError(error.response?.status, error.response?.data?.detail, "Failed to delete project.")
+      );
     }
   };
 

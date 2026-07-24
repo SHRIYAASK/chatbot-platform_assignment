@@ -3,8 +3,13 @@ import { Link, Navigate } from "react-router-dom";
 import Button from "../../../shared/components/Button.jsx";
 import Input from "../../../shared/components/Input.jsx";
 import { useToast } from "../../../shared/hooks/useToast.jsx";
+import { formatApiDetail } from "../../../shared/utils/formatApiDetail.js";
 import { registerUser } from "../services/authService.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import {
+  PASSWORD_REQUIREMENTS,
+  validateRegisterForm,
+} from "../utils/validation.js";
 
 export default function Register() {
   const { login, isAuthenticated } = useAuth();
@@ -15,6 +20,7 @@ export default function Register() {
     password: "",
     confirm_password: "",
   });
+  const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
   if (isAuthenticated) {
@@ -24,21 +30,29 @@ export default function Register() {
   const handleChange = (event) => {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
+    setErrors((current) => ({ ...current, [name]: "" }));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    const result = validateRegisterForm(form);
+    setErrors(result.errors);
+    if (!result.isValid) {
+      return;
+    }
+
     setSubmitting(true);
 
     try {
-      await registerUser(form);
-      await login({ email: form.email, password: form.password });
+      await registerUser(result.payload);
+      await login({ email: result.payload.email, password: result.payload.password });
       showSuccess("Account created successfully.");
     } catch (error) {
-      const detail = error.response?.data?.detail;
-      const message = Array.isArray(detail)
-        ? detail.map((item) => item.msg).join(", ")
-        : detail || "Registration failed.";
+      const message = formatApiDetail(
+        error.response?.data?.detail,
+        "Registration failed."
+      );
       showError(message);
     } finally {
       setSubmitting(false);
@@ -60,6 +74,7 @@ export default function Register() {
             name="name"
             value={form.name}
             onChange={handleChange}
+            error={errors.name}
             required
           />
           <Input
@@ -69,6 +84,7 @@ export default function Register() {
             type="email"
             value={form.email}
             onChange={handleChange}
+            error={errors.email}
             required
           />
           <Input
@@ -78,8 +94,10 @@ export default function Register() {
             type="password"
             value={form.password}
             onChange={handleChange}
+            error={errors.password}
             required
           />
+          <p className="text-xs text-slate-500">{PASSWORD_REQUIREMENTS}</p>
           <Input
             label="Confirm Password"
             id="confirm_password"
@@ -87,6 +105,7 @@ export default function Register() {
             type="password"
             value={form.confirm_password}
             onChange={handleChange}
+            error={errors.confirm_password}
             required
           />
           <Button type="submit" className="w-full" disabled={submitting}>

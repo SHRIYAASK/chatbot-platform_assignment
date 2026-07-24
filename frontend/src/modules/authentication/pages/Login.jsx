@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 import Button from "../../../shared/components/Button.jsx";
 import Input from "../../../shared/components/Input.jsx";
 import { useToast } from "../../../shared/hooks/useToast.jsx";
+import { formatApiDetail } from "../../../shared/utils/formatApiDetail.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Login() {
@@ -30,8 +31,10 @@ export default function Login() {
       await login(form);
       showSuccess("Logged in successfully.");
     } catch (error) {
-      const message =
-        error.response?.data?.detail || "Invalid email or password.";
+      const message = formatApiDetail(
+        error.response?.data?.detail,
+        "Invalid email or password."
+      );
       showError(message);
     } finally {
       setSubmitting(false);

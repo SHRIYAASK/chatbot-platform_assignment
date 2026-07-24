@@ -1,6 +1,7 @@
 from sqlalchemy import JSON, TypeDecorator
 
 from app.core.config import settings
+from app.shared.rag.pgvector_support import embedding_storage_uses_pgvector
 
 
 class EmbeddingVector(TypeDecorator):
@@ -14,7 +15,7 @@ class EmbeddingVector(TypeDecorator):
         self.dimension = dimension
 
     def load_dialect_impl(self, dialect):
-        if dialect.name == "postgresql" and settings.USE_PGVECTOR:
+        if dialect.name == "postgresql" and embedding_storage_uses_pgvector():
             from pgvector.sqlalchemy import Vector
 
             return dialect.type_descriptor(Vector(self.dimension))

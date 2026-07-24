@@ -7,6 +7,7 @@ from app.core.config import settings
 from app.core.database import engine
 from app.modules.chat.models.document_chunk import DocumentChunk
 from app.shared.rag.embedding_service import EmbeddingService
+from app.shared.rag.pgvector_support import embedding_storage_uses_pgvector
 
 
 @dataclass(frozen=True)
@@ -56,7 +57,7 @@ class VectorStore:
         query_embedding: list[float],
         top_k: int,
     ) -> list[StoredChunkMatch]:
-        if self._is_postgres and settings.USE_PGVECTOR:
+        if self._is_postgres and embedding_storage_uses_pgvector():
             try:
                 return self._search_postgres(project_id, query_embedding, top_k)
             except Exception:

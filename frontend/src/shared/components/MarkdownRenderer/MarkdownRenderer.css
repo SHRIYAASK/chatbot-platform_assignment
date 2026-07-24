@@ -1,0 +1,230 @@
+.markdown-renderer {
+  max-width: 800px;
+  line-height: 1.7;
+  font-size: 0.9375rem;
+  color: #1e293b;
+  word-wrap: break-word;
+}
+
+.markdown-renderer > *:first-child {
+  margin-top: 0;
+}
+
+.markdown-renderer > *:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-renderer p {
+  margin: 0 0 0.875rem;
+}
+
+.markdown-renderer h1,
+.markdown-renderer h2,
+.markdown-renderer h3,
+.markdown-renderer h4 {
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.35;
+  margin: 1.25rem 0 0.625rem;
+}
+
+.markdown-renderer h1 {
+  font-size: 1.375rem;
+}
+
+.markdown-renderer h2 {
+  font-size: 1.2rem;
+}
+
+.markdown-renderer h3 {
+  font-size: 1.05rem;
+}
+
+.markdown-renderer h4 {
+  font-size: 1rem;
+}
+
+.markdown-renderer ul,
+.markdown-renderer ol {
+  margin: 0 0 0.875rem;
+  padding-left: 1.375rem;
+}
+
+.markdown-renderer li {
+  margin: 0.25rem 0;
+}
+
+.markdown-renderer li > p {
+  margin: 0.25rem 0;
+}
+
+.markdown-renderer ul {
+  list-style-type: disc;
+}
+
+.markdown-renderer ol {
+  list-style-type: decimal;
+}
+
+.markdown-renderer strong {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.markdown-renderer em {
+  font-style: italic;
+}
+
+.markdown-renderer hr {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 1.25rem 0;
+}
+
+.markdown-renderer blockquote {
+  margin: 0 0 0.875rem;
+  padding: 0.625rem 0.875rem 0.625rem 1rem;
+  border-left: 3px solid #93c5fd;
+  background: #f8fafc;
+  border-radius: 0 0.5rem 0.5rem 0;
+  color: #475569;
+  font-style: italic;
+}
+
+.markdown-renderer a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.markdown-renderer a:hover {
+  color: #1d4ed8;
+}
+
+.markdown-renderer .md-inline-code {
+  background: #f1f5f9;
+  color: #be185d;
+  border-radius: 0.375rem;
+  padding: 0.125rem 0.375rem;
+  font-size: 0.875em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+}
+
+.markdown-renderer .md-code-block {
+  margin: 0 0 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #0f172a;
+}
+
+.markdown-renderer .md-code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: #1e293b;
+  border-bottom: 1px solid #334155;
+}
+
+.markdown-renderer .md-code-lang {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #94a3b8;
+  text-transform: lowercase;
+}
+
+.markdown-renderer .md-copy-btn {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #cbd5e1;
+  background: transparent;
+  border: 1px solid #475569;
+  border-radius: 0.375rem;
+  padding: 0.2rem 0.55rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.markdown-renderer .md-copy-btn:hover {
+  color: #f8fafc;
+  background: #334155;
+  border-color: #64748b;
+}
+
+.markdown-renderer .md-copy-btn:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
+.markdown-renderer .md-code-block pre {
+  margin: 0;
+  padding: 0.875rem 1rem;
+  overflow-x: auto;
+  background: #0f172a;
+}
+
+.markdown-renderer .md-code-block code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: #e2e8f0;
+  background: transparent;
+}
+
+.markdown-renderer .md-table-wrapper {
+  margin: 0 0 1rem;
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.markdown-renderer table {
+  width: 100%;
+  min-width: 28rem;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.markdown-renderer thead {
+  background: #f1f5f9;
+}
+
+.markdown-renderer th,
+.markdown-renderer td {
+  padding: 0.625rem 0.875rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: top;
+}
+
+.markdown-renderer th {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.markdown-renderer tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.markdown-renderer tbody tr:last-child td {
+  border-bottom: none;
+}
+
+@media (max-width: 640px) {
+  .markdown-renderer {
+    font-size: 0.9rem;
+  }
+
+  .markdown-renderer h1 {
+    font-size: 1.25rem;
+  }
+
+  .markdown-renderer h2 {
+    font-size: 1.125rem;
+  }
+}

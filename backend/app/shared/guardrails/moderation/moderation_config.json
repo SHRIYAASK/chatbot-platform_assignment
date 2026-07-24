@@ -1,0 +1,257 @@
+{
+  "version": "1.0",
+  "blocked_user_message": "I'm sorry, but I can't assist with requests involving harmful, illegal, abusive, or unsafe activities. If you have another question on a safe topic, I'd be happy to help.",
+  "decision_matrix": {
+    "LOW": "ALLOW",
+    "MEDIUM": "ALLOW",
+    "HIGH": "RESTRICT",
+    "CRITICAL": "BLOCK"
+  },
+  "categories": {
+    "PROMPT_INJECTION": {
+      "enabled": true,
+      "priority": 100,
+      "default_risk": "HIGH",
+      "patterns": [
+        "ignore previous instructions",
+        "ignore all previous",
+        "reveal system prompt",
+        "show system prompt",
+        "developer mode",
+        "forget instructions",
+        "act as root",
+        "ignore safety",
+        "jailbreak",
+        "bypass restrictions",
+        "disregard your instructions"
+      ]
+    },
+    "SEXUAL_CONTENT": {
+      "enabled": true,
+      "priority": 95,
+      "subcategories": {
+        "CSAM": {
+          "risk": "CRITICAL",
+          "decision": "BLOCK",
+          "patterns": [
+            "child porn",
+            "csam",
+            "underage sex",
+            "minor sexual",
+            "pedophil"
+          ]
+        },
+        "PORNOGRAPHY": {
+          "risk": "CRITICAL",
+          "decision": "BLOCK",
+          "patterns": [
+            "generate porn",
+            "write porn",
+            "pornographic story",
+            "explicit porn"
+          ]
+        },
+        "EXPLICIT": {
+          "risk": "HIGH",
+          "decision": "BLOCK",
+          "patterns": [
+            "sexual roleplay",
+            "explicit sexual",
+            "write erotica",
+            "nsfw story"
+          ]
+        },
+        "EDUCATIONAL": {
+          "risk": "LOW",
+          "decision": "ALLOW",
+          "patterns": [
+            "sexual health education",
+            "sex education",
+            "reproductive health"
+          ]
+        }
+      }
+    },
+    "VIOLENCE": {
+      "enabled": true,
+      "priority": 90,
+      "subcategories": {
+        "MURDER_PLANNING": {
+          "risk": "CRITICAL",
+          "decision": "BLOCK",
+          "patterns": [
+            "how to kill",
+            "how to murder",
+            "plan an assassination",
+            "make a bomb to kill",
+            "poison someone"
+          ]
+        },
+        "GRAPHIC": {
+          "risk": "HIGH",
+          "decision": "RESTRICT",
+          "patterns": [
+            "graphic violence",
+            "gore description",
+            "torture someone"
+          ]
+        }
+      }
+    },
+    "SELF_HARM": {
+      "enabled": true,
+      "priority": 88,
+      "subcategories": {
+        "INSTRUCTIONS": {
+          "risk": "CRITICAL",
+          "decision": "BLOCK",
+          "patterns": [
+            "how to commit suicide",
+            "best way to kill myself",
+            "suicide methods",
+            "how to self harm"
+          ]
+        },
+        "ENCOURAGEMENT": {
+          "risk": "CRITICAL",
+          "decision": "BLOCK",
+          "patterns": [
+            "encourage suicide",
+            "you should kill yourself",
+            "kill yourself"
+          ]
+        },
+        "SUPPORT": {
+          "risk": "LOW",
+          "decision": "ALLOW",
+          "patterns": [
+            "feeling depressed",
+            "suicidal thoughts",
+            "mental health support",
+            "i want to die"
+          ]
+        }
+      }
+    },
+    "HATE_HARASSMENT": {
+      "enabled": true,
+      "priority": 85,
+      "subcategories": {
+        "THREATS": {
+          "risk": "CRITICAL",
+          "decision": "BLOCK",
+          "patterns": [
+            "i will kill you",
+            "i'll hurt you",
+            "death threat",
+            "bomb threat"
+          ]
+        },
+        "TARGETED_HATE": {
+          "risk": "CRITICAL",
+          "decision": "BLOCK",
+          "patterns": [
+            "kill all ",
+            "exterminate ",
+            "genocide against"
+          ]
+        }
+      }
+    },
+    "CYBERSECURITY": {
+      "enabled": true,
+      "priority": 80,
+      "subcategories": {
+        "MALWARE": {
+          "risk": "CRITICAL",
+          "decision": "BLOCK",
+          "patterns": [
+            "write a keylogger",
+            "create ransomware",
+            "build malware",
+            "write a virus",
+            "trojan horse code"
+          ]
+        },
+        "PHISHING": {
+          "risk": "CRITICAL",
+          "decision": "BLOCK",
+          "patterns": [
+            "phishing email template",
+            "fake login page",
+            "steal credentials",
+            "credential theft"
+          ]
+        },
+        "EDUCATIONAL": {
+          "risk": "LOW",
+          "decision": "ALLOW",
+          "patterns": [
+            "learn cybersecurity",
+            "ctf challenge",
+            "secure coding",
+            "defensive programming"
+          ]
+        }
+      }
+    },
+    "ILLEGAL_ACTIVITIES": {
+      "enabled": true,
+      "priority": 75,
+      "subcategories": {
+        "INSTRUCTIONS": {
+          "risk": "CRITICAL",
+          "decision": "BLOCK",
+          "patterns": [
+            "how to make meth",
+            "synthesize drugs",
+            "money laundering steps",
+            "counterfeit money",
+            "human trafficking",
+            "commit fraud"
+          ]
+        }
+      }
+    },
+    "PRIVACY": {
+      "enabled": true,
+      "priority": 70,
+      "subcategories": {
+        "INVASION": {
+          "risk": "CRITICAL",
+          "decision": "BLOCK",
+          "patterns": [
+            "doxx",
+            "dox ",
+            "track someone's location secretly",
+            "steal identity",
+            "identity theft guide"
+          ]
+        }
+      }
+    },
+    "SAFE": {
+      "enabled": true,
+      "priority": 0,
+      "default_risk": "LOW",
+      "default_decision": "ALLOW"
+    }
+  },
+  "input_guard": {
+    "max_message_length": 10000,
+    "max_repeated_char_ratio": 0.6,
+    "min_unique_char_ratio": 0.05,
+    "max_duplicate_line_count": 5
+  },
+  "output_guard": {
+    "max_response_length": 50000,
+    "redact_patterns": [
+      "gsk_[a-zA-Z0-9]{20,}",
+      "sk-[a-zA-Z0-9]{20,}",
+      "eyJ[a-zA-Z0-9_-]{10,}\\.[a-zA-Z0-9_-]{10,}",
+      "SECRET_KEY\\s*=\\s*[^\\s]+",
+      "GROQ_API_KEY\\s*=\\s*[^\\s]+",
+      "DATABASE_URL\\s*=\\s*[^\\s]+"
+    ]
+  }
+}

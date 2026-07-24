@@ -25,8 +25,9 @@ def build_rag_system_message(contexts: list[RetrievedContext]) -> str | None:
 
     joined = "\n\n---\n\n".join(sections)
     return (
-        "Use the following project document excerpts to answer the user's question. "
-        "If the excerpts are not relevant, rely on your general knowledge and clearly "
-        "state when project documents do not contain the answer.\n\n"
+        "The following excerpts were retrieved from documents uploaded to this project. "
+        "Use them as the primary source when answering the user's question. "
+        "Do not ask the user to upload these documents again — they are already available below. "
+        "If the excerpts do not contain enough information, say so clearly.\n\n"
         f"{joined}"
     )

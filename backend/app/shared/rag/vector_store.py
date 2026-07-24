@@ -1,3 +1,4 @@
+import logging
 import math
 from dataclasses import dataclass
 
@@ -8,6 +9,8 @@ from app.core.database import engine
 from app.modules.chat.models.document_chunk import DocumentChunk
 from app.shared.rag.embedding_service import EmbeddingService
 from app.shared.rag.pgvector_support import embedding_storage_uses_pgvector
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -61,7 +64,10 @@ class VectorStore:
             try:
                 return self._search_postgres(project_id, query_embedding, top_k)
             except Exception:
-                return self._search_in_memory(project_id, query_embedding, top_k)
+                logger.exception(
+                    "pgvector search failed for project %s; falling back to in-memory search",
+                    project_id,
+                )
         return self._search_in_memory(project_id, query_embedding, top_k)
 
     def _search_postgres(
@@ -124,9 +130,10 @@ class VectorStore:
 
         scored: list[tuple[float, DocumentChunk]] = []
         for child in children:
-            if not isinstance(child.embedding, list):
+            embedding = _embedding_as_list(child.embedding)
+            if embedding is None:
                 continue
-            score = _cosine_similarity(query_embedding, child.embedding)
+            score = _cosine_similarity(query_embedding, embedding)
             scored.append((score, child))
 
         scored.sort(key=lambda item: item[0], reverse=True)
@@ -150,6 +157,20 @@ class VectorStore:
                 )
             )
         return matches
+
+
+def _embedding_as_list(value) -> list[float] | None:
+    """Normalize pgvector/JSON embedding values for in-memory similarity search."""
+    if value is None:
+        return None
+    if isinstance(value, list):
+        return [float(item) for item in value]
+    if hasattr(value, "tolist"):
+        return [float(item) for item in value.tolist()]
+    try:
+        return [float(item) for item in list(value)]
+    except (TypeError, ValueError):
+        return None
 
 
 def _cosine_similarity(left: list[float], right: list[float]) -> float:

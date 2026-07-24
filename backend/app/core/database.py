@@ -22,6 +22,15 @@ else:
         pool_timeout=settings.DB_POOL_TIMEOUT,
     )
 
+    if engine.dialect.name == "postgresql":
+        from sqlalchemy import event
+
+        @event.listens_for(engine, "connect")
+        def _register_pgvector(dbapi_connection, connection_record):
+            from pgvector.psycopg2 import register_vector
+
+            register_vector(dbapi_connection)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

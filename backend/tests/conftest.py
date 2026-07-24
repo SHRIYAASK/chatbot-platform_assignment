@@ -23,6 +23,7 @@ from sqlalchemy import event  # noqa: E402
 
 import app.main as main_module  # noqa: E402
 from app.core.database import Base, engine  # noqa: E402
+from app.core.migrations import upgrade_head  # noqa: E402
 
 
 @event.listens_for(engine, "connect")
@@ -32,18 +33,24 @@ def _enable_sqlite_foreign_keys(dbapi_connection, connection_record):
     cursor.close()
 
 
-@pytest.fixture(scope="session", autouse=True)
-def _setup_database():
-    Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
-    yield
-    Base.metadata.drop_all(bind=engine)
+def _remove_test_database():
+    # SQLite keeps the file locked on Windows until every connection is closed.
     engine.dispose()
     if os.path.exists("test_app.db"):
         try:
             os.remove("test_app.db")
         except OSError:
             pass
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _setup_database():
+    # Build the schema with Alembic rather than create_all so that any drift
+    # between the migrations and the ORM models fails here instead of in production.
+    _remove_test_database()
+    upgrade_head()
+    yield
+    _remove_test_database()
 
 
 @pytest.fixture()

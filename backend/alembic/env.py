@@ -9,6 +9,7 @@ from app.core.database import Base
 # Import all models so Alembic can detect metadata.
 from app.modules.authentication.models.user import User  # noqa: F401
 from app.modules.chat.models.chat_message import ChatMessage  # noqa: F401
+from app.modules.chat.models.conversation import Conversation  # noqa: F401
 from app.modules.chat.models.document import Document  # noqa: F401
 from app.modules.chat.models.document_chunk import DocumentChunk  # noqa: F401
 from app.modules.file_upload.models.file import ProjectFile  # noqa: F401

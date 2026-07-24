@@ -22,6 +22,7 @@ from app.modules.chat.routers.chat import router as chat_router
 from app.modules.chat.routers.conversations import router as conversations_router
 from app.modules.chat.routers.documents import router as documents_router
 from app.modules.file_upload.models.file import ProjectFile  # noqa: F401
+from app.modules.file_upload.routers.file import router as file_router
 from app.modules.prompt_management.models.prompt import Prompt  # noqa: F401
 from app.modules.prompt_management.routers.prompt import router as prompt_router
 from app.modules.workspace.models.project import Project  # noqa: F401
@@ -122,3 +123,4 @@ app.include_router(prompt_router)
 app.include_router(chat_router)
 app.include_router(conversations_router)
 app.include_router(documents_router)
+app.include_router(file_router)

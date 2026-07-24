@@ -11,6 +11,7 @@ class DocumentResponse(BaseModel):
     mime_type: str
     file_size: int
     status: str
+    failure_reason: str | None = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

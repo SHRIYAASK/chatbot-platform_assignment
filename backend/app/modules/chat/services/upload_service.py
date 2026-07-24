@@ -2,6 +2,7 @@ import logging
 import uuid
 from pathlib import Path
 
+import httpx
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
@@ -116,13 +117,39 @@ class UploadService:
             db.rollback()
             UploadService._mark_document_failed(db, document_id, str(exc))
             logger.warning("Document %s indexing failed: %s", document_id, exc)
-        except Exception:
+        except httpx.HTTPStatusError as exc:
             db.rollback()
-            UploadService._mark_document_failed(db, document_id, "Unexpected indexing error.")
+            reason = UploadService._embedding_http_error_message(exc)
+            UploadService._mark_document_failed(db, document_id, reason)
+            logger.warning("Document %s embedding failed: %s", document_id, reason)
+        except Exception as exc:
+            db.rollback()
+            reason = UploadService._unexpected_indexing_error_message(exc)
+            UploadService._mark_document_failed(db, document_id, reason)
             logger.exception("Document %s indexing failed unexpectedly", document_id)
-            raise
         finally:
             db.close()
+
+    @staticmethod
+    def _embedding_http_error_message(exc: httpx.HTTPStatusError) -> str:
+        if exc.response.status_code in {401, 403}:
+            return (
+                "Embedding API authentication failed. Set a valid EMBEDDING_API_KEY "
+                "on the backend server."
+            )
+        if exc.response.status_code == 429:
+            return "Embedding API rate limit exceeded. Try again in a few minutes."
+        return f"Embedding API request failed with status {exc.response.status_code}."
+
+    @staticmethod
+    def _unexpected_indexing_error_message(exc: Exception) -> str:
+        message = str(exc).strip()
+        if "Hugging Face embedding request failed" in message:
+            return (
+                "Embedding service is unavailable. Verify EMBEDDING_API_KEY and "
+                "EMBEDDING_PROVIDER on the backend server."
+            )
+        return message or "Unexpected indexing error."
 
     @staticmethod
     def _mark_document_failed(db: Session, document_id: int, reason: str) -> None:
@@ -130,6 +157,7 @@ class UploadService:
         if document is None:
             return
         document.status = "failed"
+        document.failure_reason = reason[:500]
         db.commit()
 
     async def delete_document(

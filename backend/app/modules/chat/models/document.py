@@ -19,6 +19,7 @@ class Document(Base):
     mime_type = Column(String(100), nullable=False)
     file_size = Column(Integer, nullable=False)
     status = Column(String(20), nullable=False, default="processing", index=True)
+    failure_reason = Column(String(500), nullable=True)
     created_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),

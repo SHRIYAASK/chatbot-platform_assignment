@@ -39,6 +39,18 @@ async def lifespan(app: FastAPI):
 
     configure_logging()
 
+    if settings.RAG_ENABLED and settings.EMBEDDING_PROVIDER.strip().lower() in {"huggingface", "hf", "http"}:
+        from app.shared.rag.embedding_service import get_embedding_service
+
+        try:
+            get_embedding_service().embed_texts(["startup embedding probe"])
+            logger.info("Embedding service probe succeeded.")
+        except Exception:
+            logger.exception(
+                "Embedding service probe failed. Document indexing will mark uploads as failed "
+                "until EMBEDDING_API_KEY and EMBEDDING_PROVIDER are configured correctly."
+            )
+
     if settings.AUTO_MIGRATE:
         try:
             upgrade_head()

@@ -86,6 +86,11 @@ export default function DocumentUploadPanel({ projectId }) {
                   </span>
                   <StatusBadge status={document.status} />
                 </div>
+                {document.status === "failed" && document.failure_reason ? (
+                  <p className="mt-1 text-[11px] leading-snug text-rose-600">
+                    {document.failure_reason}
+                  </p>
+                ) : null}
               </div>
               <button
                 type="button"

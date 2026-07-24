@@ -28,4 +28,5 @@ echo "Running database migrations..."
 alembic upgrade head
 
 echo "Starting API server..."
-exec uvicorn app.main:app --host 0.0.0.0 --port 8002
+PORT="${PORT:-8002}"
+exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT"

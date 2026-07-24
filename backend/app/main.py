@@ -1,13 +1,9 @@
 import logging
-import re
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 
@@ -15,7 +11,6 @@ from app.core.config import settings
 from app.core.database import engine
 from app.core.exception_handlers import register_exception_handlers
 from app.core.logging_config import configure_logging
-from app.core.rate_limit import limiter
 from app.modules.authentication.models.user import User  # noqa: F401
 from app.modules.authentication.routers.auth import router as auth_router
 from app.modules.chat.models.chat_message import ChatMessage  # noqa: F401
@@ -33,23 +28,6 @@ from app.modules.workspace.routers.project import router as project_router
 from app.shared.guardrails.moderation.models import ModerationEvent  # noqa: F401
 
 logger = logging.getLogger(__name__)
-
-_VERCEL_ORIGIN = re.compile(r"^https://.*\.vercel\.app$")
-
-
-def _is_allowed_cors_origin(origin: str) -> bool:
-    return origin in settings.cors_origins_list or bool(_VERCEL_ORIGIN.match(origin))
-
-
-def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
-    """Return 429 with CORS headers so browsers report rate limits correctly."""
-    response = _rate_limit_exceeded_handler(request, exc)
-    origin = request.headers.get("origin")
-    if origin and _is_allowed_cors_origin(origin):
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        response.headers["Vary"] = "Origin"
-    return response
 
 
 @asynccontextmanager
@@ -76,10 +54,6 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
-
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
-app.add_middleware(SlowAPIMiddleware)
 
 # CORS must be the outermost middleware so browser preflight (OPTIONS) succeeds.
 app.add_middleware(

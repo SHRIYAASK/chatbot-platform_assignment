@@ -41,7 +41,6 @@ services:
       MODERATION_ENABLED: ${MODERATION_ENABLED:-true}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       LOG_JSON: ${LOG_JSON:-true}
-      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
     ports:
       - "8002:8002"
     volumes:

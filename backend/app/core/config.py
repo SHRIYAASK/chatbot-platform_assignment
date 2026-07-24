@@ -57,12 +57,6 @@ class Settings(BaseSettings):
     DB_POOL_RECYCLE: int = 1800
     DB_POOL_TIMEOUT: int = 30
 
-    # Rate limiting (requests per window, e.g. "5/minute")
-    RATE_LIMIT_ENABLED: bool = True
-    RATE_LIMIT_DEFAULT: str = "120/minute"
-    RATE_LIMIT_AUTH: str = "10/minute"
-    RATE_LIMIT_CHAT: str = "30/minute"
-
     # Automatically run Alembic migrations on startup (recommended for local dev).
     AUTO_MIGRATE: bool = True
 
@@ -70,6 +64,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=True,
+        extra="ignore",
     )
 
     @field_validator("CORS_ORIGINS")

@@ -10,7 +10,6 @@ from uuid import uuid4
 
 os.environ["DATABASE_URL"] = "sqlite:///./test_app.db"
 os.environ["SECRET_KEY"] = "test-secret-key-that-is-long-enough-1234567890"
-os.environ["RATE_LIMIT_ENABLED"] = "false"
 os.environ["MODERATION_ENABLED"] = "false"
 os.environ["GROQ_API_KEY"] = ""
 os.environ["STORAGE_PROVIDER"] = "local"

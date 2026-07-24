@@ -92,7 +92,6 @@ python -m pytest
 - Startup validation of `SECRET_KEY` (rejects known placeholders / short keys)
 - Structured logging (`LOG_JSON=true` for JSON logs)
 - Centralized exception handling (no stack traces leak to clients)
-- Rate limiting via slowapi (`RATE_LIMIT_*` settings)
 - Tunable DB connection pool (`DB_POOL_*` settings)
 - Alembic migrations as the single source of truth for schema
 - Input/output guardrails and moderation (`MODERATION_ENABLED`)

@@ -1,12 +1,10 @@
 import asyncio
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
-from app.core.rate_limit import limiter
 from app.modules.authentication.models.user import User
 from app.modules.chat.schemas.chat import (
     MessageCreate,
@@ -66,9 +64,7 @@ def list_conversation_messages(
     response_model=SendMessageResponse,
     status_code=status.HTTP_201_CREATED,
 )
-@limiter.limit(settings.RATE_LIMIT_CHAT)
 async def send_conversation_message(
-    request: Request,
     project_id: int,
     conversation_id: int,
     message_data: MessageCreate,
@@ -134,9 +130,7 @@ def list_messages(
 
 
 @router.post("/messages", response_model=SendMessageResponse, status_code=status.HTTP_201_CREATED)
-@limiter.limit(settings.RATE_LIMIT_CHAT)
 async def send_message(
-    request: Request,
     project_id: int,
     message_data: MessageCreate,
     conversation_id: int | None = Query(None),

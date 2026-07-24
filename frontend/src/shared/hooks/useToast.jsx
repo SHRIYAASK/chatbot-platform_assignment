@@ -10,15 +10,28 @@ export function ToastProvider({ children }) {
     window.setTimeout(() => setToast(null), 3500);
   }, []);
 
+  const showSuccess = useCallback(
+    (message) => showToast(message, "success"),
+    [showToast]
+  );
+  const showError = useCallback(
+    (message) => showToast(message, "error"),
+    [showToast]
+  );
+  const showInfo = useCallback(
+    (message) => showToast(message, "info"),
+    [showToast]
+  );
+
   const value = useMemo(
     () => ({
       toast,
       showToast,
-      showSuccess: (message) => showToast(message, "success"),
-      showError: (message) => showToast(message, "error"),
-      showInfo: (message) => showToast(message, "info"),
+      showSuccess,
+      showError,
+      showInfo,
     }),
-    [toast, showToast]
+    [toast, showToast, showSuccess, showError, showInfo]
   );
 
   return <ToastContext.Provider value={value}>{children}</ToastContext.Provider>;

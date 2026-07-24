@@ -1,7 +1,8 @@
-from contextlib import asynccontextmanager
 import logging
+import re
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
@@ -33,6 +34,23 @@ from app.shared.guardrails.moderation.models import ModerationEvent  # noqa: F40
 
 logger = logging.getLogger(__name__)
 
+_VERCEL_ORIGIN = re.compile(r"^https://.*\.vercel\.app$")
+
+
+def _is_allowed_cors_origin(origin: str) -> bool:
+    return origin in settings.cors_origins_list or bool(_VERCEL_ORIGIN.match(origin))
+
+
+def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    """Return 429 with CORS headers so browsers report rate limits correctly."""
+    response = _rate_limit_exceeded_handler(request, exc)
+    origin = request.headers.get("origin")
+    if origin and _is_allowed_cors_origin(origin):
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Vary"] = "Origin"
+    return response
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -60,7 +78,7 @@ app = FastAPI(
 )
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
 # CORS must be the outermost middleware so browser preflight (OPTIONS) succeeds.

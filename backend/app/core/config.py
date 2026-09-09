@@ -57,6 +57,16 @@ class Settings(BaseSettings):
     DB_POOL_RECYCLE: int = 1800
     DB_POOL_TIMEOUT: int = 30
 
+    # Voice / LiveKit
+    LIVEKIT_URL: str = ""
+    LIVEKIT_API_KEY: str = ""
+    LIVEKIT_API_SECRET: str = ""
+    SARVAM_API_KEY: str = ""
+    VOICE_SERVICE_TOKEN_EXPIRE_MINUTES: int = 10
+    BACKEND_INTERNAL_URL: str = "http://127.0.0.1:8002"
+    # Start the LiveKit worker inside the API process (local dev / single-container deploy).
+    VOICE_AGENT_ENABLED: bool = True
+
     # Automatically run Alembic migrations on startup (recommended for local dev).
     AUTO_MIGRATE: bool = True
 

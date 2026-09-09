@@ -17,6 +17,7 @@ export default function ChatWindow({
   onSend,
   onStop,
   focusInputToken,
+  voiceCall,
 }) {
   const { scrollContainerRef, bottomRef, showScrollButton, scrollToBottom } =
     useChatScroll(messages, typing, loading, loadingOlder);
@@ -66,6 +67,7 @@ export default function ChatWindow({
         isGenerating={isGenerating}
         disabled={loading}
         focusInputToken={focusInputToken}
+        voiceCall={voiceCall}
       />
     </div>
   );

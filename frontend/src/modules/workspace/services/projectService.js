@@ -23,3 +23,8 @@ export async function updateProject(projectId, payload) {
 export async function deleteProject(projectId) {
   await api.delete(`/projects/${projectId}`);
 }
+
+export async function rewriteProjectDescription(description) {
+  const response = await api.post("/projects/description/rewrite", { description });
+  return response.data;
+}

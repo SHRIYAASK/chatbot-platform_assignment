@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Button from "../../../shared/components/Button.jsx";
+import VoiceCallButton from "./VoiceCallButton.jsx";
 
 export default function MessageInput({
   onSend,
@@ -7,6 +8,7 @@ export default function MessageInput({
   isGenerating,
   disabled,
   focusInputToken = 0,
+  voiceCall,
 }) {
   const [value, setValue] = useState("");
   const textareaRef = useRef(null);
@@ -61,15 +63,31 @@ export default function MessageInput({
             Stop Generating
           </Button>
         ) : (
-          <Button
-            type="submit"
-            disabled={disabled || !value.trim()}
-            className="self-end"
-          >
-            Send
-          </Button>
+          <>
+            {voiceCall ? (
+              <VoiceCallButton
+                isActive={voiceCall.isActive}
+                isConnecting={voiceCall.isConnecting}
+                disabled={disabled}
+                onToggle={voiceCall.toggleCall}
+              />
+            ) : null}
+            <Button
+              type="submit"
+              disabled={disabled || !value.trim()}
+              className="self-end"
+            >
+              Send
+            </Button>
+          </>
         )}
       </div>
+      {voiceCall?.isActive ? (
+        <p className="mt-2 text-xs font-medium text-brand-700">On call — speak into your microphone</p>
+      ) : null}
+      {voiceCall?.error ? (
+        <p className="mt-2 text-xs text-red-600">{voiceCall.error}</p>
+      ) : null}
     </form>
   );
 }

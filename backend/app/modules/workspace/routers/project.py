@@ -4,12 +4,16 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.modules.authentication.models.user import User
+from app.modules.chat.services.llm_service import LLMServiceError
 from app.modules.workspace.schemas.project import (
+    DescriptionRewriteRequest,
+    DescriptionRewriteResponse,
     ProjectCreate,
     ProjectListResponse,
     ProjectResponse,
     ProjectUpdate,
 )
+from app.modules.workspace.services.description_rewrite_service import DescriptionRewriteService
 from app.modules.workspace.services.project_service import (
     ProjectAlreadyExistsError,
     ProjectService,
@@ -17,6 +21,22 @@ from app.modules.workspace.services.project_service import (
 from app.modules.workspace.services.project_summary_service import ProjectSummaryService
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
+
+
+@router.post("/description/rewrite", response_model=DescriptionRewriteResponse)
+async def rewrite_project_description(
+    payload: DescriptionRewriteRequest,
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        rewritten = await DescriptionRewriteService.rewrite_description(payload.description)
+    except LLMServiceError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="The AI service is temporarily unavailable. Please try again.",
+        ) from exc
+
+    return DescriptionRewriteResponse(rewritten_description=rewritten)
 
 
 @router.post("", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)

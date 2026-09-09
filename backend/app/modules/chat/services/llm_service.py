@@ -1,5 +1,7 @@
 import asyncio
+import json
 import logging
+from collections.abc import AsyncIterator
 from typing import Any
 
 import httpx
@@ -218,3 +220,89 @@ class LLMService:
             ) from fallback_exc
 
         raise LLMServiceError("The AI service is temporarily unavailable. Please try again.")
+
+    @classmethod
+    async def _stream_model(
+        cls,
+        model: str,
+        messages: list[dict[str, str]],
+    ) -> AsyncIterator[str]:
+        headers = {
+            "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": model,
+            "messages": messages,
+            "temperature": 0.7,
+            "stream": True,
+        }
+        url = f"{settings.GROQ_BASE_URL.rstrip('/')}/chat/completions"
+
+        client = await cls._get_client()
+        async with client.stream("POST", url, json=payload, headers=headers) as response:
+            if response.status_code >= 400:
+                body = await response.aread()
+                detail = "The AI service returned an unexpected error."
+                try:
+                    payload_json = json.loads(body)
+                    if isinstance(payload_json, dict):
+                        detail = cls._extract_error_detail(
+                            httpx.Response(status_code=response.status_code, content=body)
+                        )
+                except (json.JSONDecodeError, ValueError):
+                    pass
+                raise LLMServiceError(f"The AI service returned an error: {detail}")
+
+            async for line in response.aiter_lines():
+                if not line.startswith("data:"):
+                    continue
+                data = line[len("data:") :].strip()
+                if not data or data == "[DONE]":
+                    continue
+                try:
+                    payload_json = json.loads(data)
+                except json.JSONDecodeError:
+                    continue
+
+                try:
+                    delta = payload_json["choices"][0]["delta"]["content"]
+                except (KeyError, IndexError, TypeError):
+                    continue
+
+                if delta:
+                    yield delta
+
+    @classmethod
+    async def stream_reply(
+        cls,
+        messages: list[dict[str, str]],
+        primary_model: str | None = None,
+        fallback_model: str | None = None,
+    ) -> AsyncIterator[str]:
+        if not cls._is_configured():
+            raise LLMServiceError(
+                "AI service is unavailable. Configure GROQ_API_KEY in backend/.env."
+            )
+
+        primary = primary_model or settings.PRIMARY_MODEL
+        fallback = fallback_model or settings.FALLBACK_MODEL
+
+        try:
+            async for chunk in cls._stream_model(primary, messages):
+                yield chunk
+            return
+        except asyncio.CancelledError:
+            raise
+        except LLMServiceError:
+            logger.info("Primary model stream failed (%s). Retrying with fallback.", primary)
+
+        try:
+            async for chunk in cls._stream_model(fallback, messages):
+                yield chunk
+        except asyncio.CancelledError:
+            raise
+        except LLMServiceError as exc:
+            raise LLMServiceError(
+                "The AI service is temporarily unavailable. Please try again."
+            ) from exc

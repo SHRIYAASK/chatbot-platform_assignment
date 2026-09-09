@@ -9,6 +9,7 @@ import { useChat } from "../hooks/useChat.js";
 import { useConversations } from "../hooks/useConversations.js";
 import { useInfiniteChat } from "../hooks/useInfiniteChat.js";
 import { useProjectDocuments } from "../hooks/useProjectDocuments.js";
+import { useVoiceCall } from "../hooks/useVoiceCall.js";
 
 export default function ProjectChat() {
   const { id: projectId, conversationId: conversationIdParam } = useParams();
@@ -60,6 +61,10 @@ export default function ProjectChat() {
       onMessageSent: refreshConversations,
     },
   );
+
+  const voiceCall = useVoiceCall(projectId, resolvedConversationId, {
+    onTurnComplete: syncMessages,
+  });
 
   useEffect(() => {
     redirectAttemptedRef.current = false;
@@ -191,6 +196,7 @@ export default function ProjectChat() {
             onSend={sendChatMessage}
             onStop={stopGeneration}
             focusInputToken={focusInputToken}
+            voiceCall={voiceCall}
           />
         </div>
       </div>

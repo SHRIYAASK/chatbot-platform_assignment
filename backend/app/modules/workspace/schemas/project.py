@@ -61,3 +61,16 @@ class ProjectListResponse(BaseModel):
     total: int
     projects: list[ProjectResponse]
 
+
+class DescriptionRewriteRequest(BaseModel):
+    description: str = Field(..., min_length=10, max_length=500)
+
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, value: str) -> str:
+        return validate_project_description(value)
+
+
+class DescriptionRewriteResponse(BaseModel):
+    rewritten_description: str
+

@@ -26,6 +26,7 @@ from app.modules.file_upload.routers.file import router as file_router
 from app.modules.prompt_management.models.prompt import Prompt  # noqa: F401
 from app.modules.prompt_management.routers.prompt import router as prompt_router
 from app.modules.workspace.models.project import Project  # noqa: F401
+from app.modules.voice.routers.voice import router as voice_router
 from app.modules.workspace.routers.project import router as project_router
 from app.shared.guardrails.moderation.models import ModerationEvent  # noqa: F401
 
@@ -58,7 +59,15 @@ async def lifespan(app: FastAPI):
             logger.exception("Automatic database migration failed.")
             raise
 
+    from app.modules.voice.worker.manager import start_embedded_voice_agent
+
+    start_embedded_voice_agent()
+
     yield
+
+    from app.modules.voice.worker.manager import stop_embedded_voice_agent
+
+    stop_embedded_voice_agent()
     await LLMService.close()
 
 
@@ -136,3 +145,4 @@ app.include_router(chat_router)
 app.include_router(conversations_router)
 app.include_router(documents_router)
 app.include_router(file_router)
+app.include_router(voice_router)

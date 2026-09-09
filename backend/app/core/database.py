@@ -22,7 +22,7 @@ else:
         pool_timeout=settings.DB_POOL_TIMEOUT,
     )
 
-    if engine.dialect.name == "postgresql":
+    if engine.dialect.name == "postgresql" and settings.USE_PGVECTOR:
         from sqlalchemy import event
 
         @event.listens_for(engine, "connect")

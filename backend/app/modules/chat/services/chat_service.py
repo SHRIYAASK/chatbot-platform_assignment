@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 
 from sqlalchemy.exc import OperationalError
@@ -263,3 +264,74 @@ class ChatService:
         )
 
         return prepared.user_message, assistant_message
+
+    @staticmethod
+    async def stream_message(
+        user_id: int,
+        project_id: int,
+        conversation_id: int,
+        content: str,
+    ) -> AsyncIterator[str]:
+        content = content.strip()
+
+        if settings.MODERATION_ENABLED:
+            moderation = await run_sync_db(
+                lambda: ModerationService.check(
+                    content,
+                    user_id=user_id,
+                    project_id=project_id,
+                )
+            )
+
+            if not moderation.allowed:
+                blocked = ModerationService.blocked_response_message()
+                await run_sync_db(
+                    lambda: ChatService._handle_blocked_message(
+                        project_id,
+                        conversation_id,
+                        content,
+                    )
+                )
+                yield blocked
+                return
+
+        prepared = await run_sync_db(
+            lambda: ChatService._prepare_send(
+                user_id,
+                project_id,
+                conversation_id,
+                content,
+            )
+        )
+
+        accumulated: list[str] = []
+        try:
+            async for chunk in LLMService.stream_reply(
+                prepared.llm_messages,
+                primary_model=prepared.primary_model,
+                fallback_model=prepared.fallback_model,
+            ):
+                accumulated.append(chunk)
+                yield chunk
+        except asyncio.CancelledError:
+            logger.info(
+                "Voice stream cancelled for project %s conversation %s",
+                project_id,
+                conversation_id,
+            )
+            raise
+        except LLMServiceError:
+            raise
+
+        full_text = "".join(accumulated).strip()
+        sanitized_content = ModerationService.sanitize_output(full_text)
+
+        await run_sync_db(
+            lambda: ChatService._save_assistant_message(
+                project_id,
+                prepared.conversation_id,
+                sanitized_content,
+                prepared.primary_model,
+                None,
+            )
+        )

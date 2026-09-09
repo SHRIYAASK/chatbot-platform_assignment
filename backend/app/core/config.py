@@ -1,6 +1,8 @@
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.core.database_url import resolve_database_url
+
 PLACEHOLDER_SECRETS = {
     "",
     "change-me-to-a-long-random-secret",
@@ -22,6 +24,8 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     DATABASE_URL: str
+    # Optional override for Render external Postgres URL.
+    DATABASE_EXTERNAL_URL: str = ""
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
@@ -96,7 +100,13 @@ class Settings(BaseSettings):
         return normalized
 
     @model_validator(mode="after")
-    def validate_embedding_settings(self) -> "Settings":
+    def validate_settings(self) -> "Settings":
+        object.__setattr__(
+            self,
+            "DATABASE_URL",
+            resolve_database_url(self.DATABASE_URL, self.DATABASE_EXTERNAL_URL),
+        )
+
         provider = self.EMBEDDING_PROVIDER.strip().lower()
         api_key = self.EMBEDDING_API_KEY.strip()
 

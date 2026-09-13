@@ -458,8 +458,7 @@ New feature endpoints:
 |----------|----------|------------------|
 | `ENVIRONMENT` | Yes | `production` |
 | `DATABASE_URL` | Yes | From linked Postgres (auto) |
-| `RENDER_POSTGRES_REGION` | Yes* | `singapore`, `oregon`, `frankfurt`, etc. (*if internal hostname fails) |
-| `DATABASE_EXTERNAL_URL` | Alt | Paste External Database URL from Postgres dashboard |
+| `DATABASE_EXTERNAL_URL` | Alt | Only if internal URL fails — External URL with `?sslmode=require` |
 | `SECRET_KEY` | Yes | Random string ≥ 32 chars |
 | `GROQ_API_KEY` | Yes | Groq API key |
 | `EMBEDDING_API_KEY` | Yes* | Hugging Face token (*if `RAG_ENABLED=true`) |
@@ -472,7 +471,7 @@ New feature endpoints:
 
 5. Deploy. Logs should show `Database is ready.` then `registered worker` (if voice is configured).
 
-A reference blueprint is in [`render.yaml`](render.yaml). Render auto-expands internal Postgres hostnames (`dpg-*-a`) to external URLs with SSL.
+A reference blueprint is in [`render.yaml`](render.yaml). **Link Postgres** to the web service and use the **Internal Database URL** (hostname `dpg-*-a`, no SSL). The API starts even if the DB is briefly unavailable; `/health/ready` reports database status.
 
 ### Vercel — frontend
 

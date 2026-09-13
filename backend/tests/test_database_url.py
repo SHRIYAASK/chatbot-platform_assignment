@@ -23,15 +23,21 @@ def test_external_url_adds_sslmode():
     assert database_url_mode(url) == "render-external"
 
 
-def test_database_external_url_env_takes_precedence():
+def test_internal_url_preferred_over_external_on_render():
     external = (
         "postgresql://user:pass@dpg-example-a.singapore-postgres.render.com/chatbot"
     )
-    url = resolve_database_url(
-        "postgresql://user:pass@dpg-old-a/chatbot",
-        external=external,
+    internal = "postgresql://user:pass@dpg-old-a/chatbot"
+    url = resolve_database_url(internal, external=external)
+    assert url == internal
+    assert "sslmode" not in url
+
+
+def test_external_used_when_primary_missing():
+    external = (
+        "postgresql://user:pass@dpg-example-a.singapore-postgres.render.com/chatbot"
     )
-    assert "singapore-postgres.render.com" in url
+    url = resolve_database_url("", external=external)
     assert "sslmode=require" in url
 
 

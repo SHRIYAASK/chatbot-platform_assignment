@@ -1,4 +1,3 @@
-import os
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 
@@ -36,24 +35,23 @@ def resolve_database_url(primary: str, external: str = "") -> str:
     Render guidance:
     - Same-region web service + Postgres: use Internal Database URL as-is (no SSL).
     - External connections: use External Database URL with ``?sslmode=require``.
+    - When both are set, prefer the linked internal ``DATABASE_URL``.
     """
-    explicit_external = (external or "").strip()
+    primary_url = normalize_postgres_scheme((primary or "").strip())
+    explicit_external = normalize_postgres_scheme((external or "").strip())
+
+    if primary_url:
+        host = urlparse(primary_url).hostname or ""
+        if _is_render_internal_postgres_host(host):
+            return primary_url
+        if host.endswith(".render.com"):
+            return ensure_ssl_for_external_render(primary_url)
+        return primary_url
+
     if explicit_external:
-        url = normalize_postgres_scheme(explicit_external)
-        return ensure_ssl_for_external_render(url)
+        return ensure_ssl_for_external_render(explicit_external)
 
-    url = normalize_postgres_scheme((primary or "").strip())
-    host = urlparse(url).hostname or ""
-
-    # Linked internal URL on Render private network — do not rewrite or force SSL.
-    if _is_render_internal_postgres_host(host):
-        return url
-
-    # Already using the external Render hostname.
-    if host.endswith(".render.com"):
-        return ensure_ssl_for_external_render(url)
-
-    return url
+    return ""
 
 
 def database_url_mode(url: str) -> str:

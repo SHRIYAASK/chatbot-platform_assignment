@@ -77,9 +77,8 @@ def _try_parse_metadata(raw: str | None) -> BackendContext | None:
         return None
     try:
         return BackendContext(
-            backend_url=str(
-                payload.get("backend_url") or settings.BACKEND_INTERNAL_URL
-            ).rstrip("/"),
+            # Always use the runtime URL — token metadata may carry a stale port.
+            backend_url=settings.BACKEND_INTERNAL_URL.rstrip("/"),
             project_id=int(payload["project_id"]),
             conversation_id=int(payload["conversation_id"]),
             service_token=str(payload["service_token"]),
@@ -152,15 +151,23 @@ class BackendVoiceAgent(Agent):
             user_message[:80],
         )
 
-        async for chunk in stream_chat(
-            backend_url=self._backend_ctx.backend_url,
-            project_id=self._backend_ctx.project_id,
-            conversation_id=self._backend_ctx.conversation_id,
-            service_token=self._backend_ctx.service_token,
-            content=user_message,
-        ):
-            if chunk:
-                yield chunk
+        try:
+            async for chunk in stream_chat(
+                backend_url=self._backend_ctx.backend_url,
+                project_id=self._backend_ctx.project_id,
+                conversation_id=self._backend_ctx.conversation_id,
+                service_token=self._backend_ctx.service_token,
+                content=user_message,
+            ):
+                if chunk:
+                    yield chunk
+        except Exception:
+            logger.exception(
+                "Voice backend stream failed for conversation=%s backend=%s",
+                self._backend_ctx.conversation_id,
+                self._backend_ctx.backend_url,
+            )
+            yield "Sorry, I could not generate a response. Please try again."
 
 
 server = AgentServer()

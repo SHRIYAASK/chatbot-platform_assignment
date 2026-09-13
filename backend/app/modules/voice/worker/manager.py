@@ -21,7 +21,9 @@ def voice_agent_configured() -> bool:
 
 
 def _worker_env() -> dict[str, str]:
+    port = (os.environ.get("PORT") or "8002").strip() or "8002"
     env = os.environ.copy()
+    env["PORT"] = port
     env["LIVEKIT_URL"] = settings.LIVEKIT_URL
     env["LIVEKIT_API_KEY"] = settings.LIVEKIT_API_KEY
     env["LIVEKIT_API_SECRET"] = settings.LIVEKIT_API_SECRET
@@ -51,7 +53,10 @@ def start_embedded_voice_agent() -> bool:
 
     backend_root = Path(__file__).resolve().parents[4]
     cmd = [sys.executable, "-m", "app.modules.voice.worker", "start"]
-    logger.info("Starting embedded voice agent worker")
+    logger.info(
+        "Starting embedded voice agent worker (backend=%s)",
+        settings.BACKEND_INTERNAL_URL,
+    )
     _process = subprocess.Popen(
         cmd,
         cwd=backend_root,

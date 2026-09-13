@@ -86,7 +86,7 @@ def _try_parse_metadata(raw: str | None) -> BackendContext | None:
         return BackendContext(
             backend_url=str(
                 payload.get("backend_url")
-                or os.environ.get("BACKEND_INTERNAL_URL", "http://127.0.0.1:8002")
+                or os.environ.get("VOICE_API_BASE_URL", "http://127.0.0.1:8002")
             ).rstrip("/"),
             project_id=int(payload["project_id"]),
             conversation_id=int(payload["conversation_id"]),

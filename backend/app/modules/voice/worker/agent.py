@@ -1,8 +1,9 @@
 import json
 import logging
+import os
 import re
 from dataclasses import dataclass
-from typing import AsyncIterable
+from typing import Any, AsyncIterable
 
 from livekit import agents
 from livekit.agents import Agent, AgentServer, AgentSession, ModelSettings, inference, llm, room_io
@@ -78,7 +79,7 @@ def _try_parse_metadata(raw: str | None) -> BackendContext | None:
     try:
         return BackendContext(
             # Always use the runtime URL — token metadata may carry a stale port.
-            backend_url=settings.BACKEND_INTERNAL_URL.rstrip("/"),
+            backend_url=settings.VOICE_API_BASE_URL.rstrip("/"),
             project_id=int(payload["project_id"]),
             conversation_id=int(payload["conversation_id"]),
             service_token=str(payload["service_token"]),
@@ -170,7 +171,18 @@ class BackendVoiceAgent(Agent):
             yield "Sorry, I could not generate a response. Please try again."
 
 
-server = AgentServer()
+def _agent_server_options() -> dict[str, Any]:
+    """Render starter instances have little CPU/RAM; default LiveKit settings mark the worker full."""
+    if os.environ.get("RENDER") or os.environ.get("VOICE_AGENT_LOW_RESOURCES", "").lower() == "true":
+        return {
+            "num_idle_processes": 0,
+            "load_threshold": 0.99,
+            "initialize_process_timeout": 120.0,
+        }
+    return {}
+
+
+server = AgentServer(**_agent_server_options())
 
 
 @server.rtc_session(agent_name=VOICE_AGENT_NAME)

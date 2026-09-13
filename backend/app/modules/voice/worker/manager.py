@@ -28,7 +28,7 @@ def _worker_env() -> dict[str, str]:
     env["LIVEKIT_API_KEY"] = settings.LIVEKIT_API_KEY
     env["LIVEKIT_API_SECRET"] = settings.LIVEKIT_API_SECRET
     env["SARVAM_API_KEY"] = settings.SARVAM_API_KEY
-    env["BACKEND_INTERNAL_URL"] = settings.BACKEND_INTERNAL_URL
+    env["VOICE_API_BASE_URL"] = settings.VOICE_API_BASE_URL
     return env
 
 
@@ -55,7 +55,7 @@ def start_embedded_voice_agent() -> bool:
     cmd = [sys.executable, "-m", "app.modules.voice.worker", "start"]
     logger.info(
         "Starting embedded voice agent worker (backend=%s)",
-        settings.BACKEND_INTERNAL_URL,
+        settings.VOICE_API_BASE_URL,
     )
     _process = subprocess.Popen(
         cmd,

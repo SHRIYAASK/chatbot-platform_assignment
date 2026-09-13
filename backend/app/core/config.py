@@ -3,7 +3,7 @@ import os
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from app.core.backend_url import resolve_backend_internal_url
+from app.core.voice_api_url import resolve_voice_api_base_url
 from app.core.database_url import resolve_database_url
 
 PLACEHOLDER_SECRETS = {
@@ -70,7 +70,7 @@ class Settings(BaseSettings):
     LIVEKIT_API_SECRET: str = ""
     SARVAM_API_KEY: str = ""
     VOICE_SERVICE_TOKEN_EXPIRE_MINUTES: int = 10
-    BACKEND_INTERNAL_URL: str = "http://127.0.0.1:8002"
+    VOICE_API_BASE_URL: str = "http://127.0.0.1:8002"
     # Start the LiveKit worker inside the API process (local dev / single-container deploy).
     VOICE_AGENT_ENABLED: bool = True
 
@@ -111,8 +111,8 @@ class Settings(BaseSettings):
         )
         object.__setattr__(
             self,
-            "BACKEND_INTERNAL_URL",
-            resolve_backend_internal_url(self.BACKEND_INTERNAL_URL),
+            "VOICE_API_BASE_URL",
+            resolve_voice_api_base_url(self.VOICE_API_BASE_URL),
         )
 
         if os.environ.get("RENDER") and self.AUTO_MIGRATE:

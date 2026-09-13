@@ -43,7 +43,7 @@ async def lifespan(app: FastAPI):
     if settings.is_production:
         logger.info(
             "Production mode: database host configured, voice backend=%s, auto_migrate=%s",
-            settings.BACKEND_INTERNAL_URL,
+            settings.VOICE_API_BASE_URL,
             settings.AUTO_MIGRATE,
         )
 

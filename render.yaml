@@ -28,7 +28,7 @@ services:
         value: true
       - key: VOICE_AGENT_ENABLED
         value: true
-      - key: BACKEND_INTERNAL_URL
+      - key: VOICE_API_BASE_URL
         value: http://127.0.0.1:${PORT}
       - key: CORS_ORIGINS
         value: https://chatbot-platform-assignment.vercel.app

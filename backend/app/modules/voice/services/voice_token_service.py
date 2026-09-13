@@ -47,7 +47,7 @@ class VoiceTokenService:
             "conversation_id": conversation_id,
             "user_id": current_user.id,
             "service_token": service_token,
-            "backend_url": settings.BACKEND_INTERNAL_URL.rstrip("/"),
+            "backend_url": settings.VOICE_API_BASE_URL.rstrip("/"),
         }
         metadata_json = json.dumps(metadata)
 

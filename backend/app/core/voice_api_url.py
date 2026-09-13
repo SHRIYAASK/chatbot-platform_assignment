@@ -1,8 +1,8 @@
 import os
 
 
-def resolve_backend_internal_url(explicit: str) -> str:
-    """Resolve the URL the embedded voice worker uses to call this API.
+def resolve_voice_api_base_url(explicit: str) -> str:
+    """Resolve the base URL the embedded voice worker uses to call this API.
 
     On Render the web service listens on ``PORT`` (usually 10000), not 8002.
     When unset or left at the local default, use loopback + the runtime port.

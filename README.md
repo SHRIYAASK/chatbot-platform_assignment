@@ -331,7 +331,7 @@ From [`backend/app/core/config.py`](backend/app/core/config.py).
 | `LIVEKIT_API_KEY` | No | `""` | LiveKit API key (voice) |
 | `LIVEKIT_API_SECRET` | No | `""` | LiveKit API secret (voice) |
 | `SARVAM_API_KEY` | No | `""` | Sarvam key (embedded voice worker) |
-| `BACKEND_INTERNAL_URL` | No | `http://127.0.0.1:8002` | Backend URL the voice worker calls for SSE |
+| `VOICE_API_BASE_URL` | No | `http://127.0.0.1:8002` | API base URL the voice worker calls for SSE (not `DATABASE_URL`) |
 | `VOICE_AGENT_ENABLED` | No | `true` | Start embedded LiveKit worker with the API |
 
 See [`backend/.env.example`](backend/.env.example) for all settings (`GROQ_*`, `EMBEDDING_*`, `DB_POOL_*`, etc.).
@@ -465,7 +465,7 @@ New feature endpoints:
 | `CORS_ORIGINS` | Yes | `https://your-app.vercel.app` |
 | `USE_PGVECTOR` | Yes | `true` |
 | `AUTO_MIGRATE` | Yes | `false` (migrations run in `entrypoint.sh`) |
-| `BACKEND_INTERNAL_URL` | Yes | `http://127.0.0.1:${PORT}` |
+| `VOICE_API_BASE_URL` | Yes | `http://127.0.0.1:${PORT}` |
 | `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `SARVAM_API_KEY` | Voice | LiveKit + Sarvam credentials |
 | `VOICE_AGENT_ENABLED` | No | `true` (embedded worker) |
 

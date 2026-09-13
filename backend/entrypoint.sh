@@ -1,7 +1,7 @@
 #!/bin/sh
 
 PORT="${PORT:-8002}"
-export BACKEND_INTERNAL_URL="${BACKEND_INTERNAL_URL:-http://127.0.0.1:${PORT}}"
+export VOICE_API_BASE_URL="${VOICE_API_BASE_URL:-http://127.0.0.1:${PORT}}"
 DATABASE_URL_FILE="/tmp/working_database_url"
 
 rm -f "$DATABASE_URL_FILE"
@@ -115,5 +115,5 @@ else
 fi
 
 echo "Starting API server on 0.0.0.0:${PORT}..."
-echo "Voice worker backend URL: ${BACKEND_INTERNAL_URL}"
+echo "Voice worker API base URL: ${VOICE_API_BASE_URL}"
 exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT"

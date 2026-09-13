@@ -1,5 +1,15 @@
 import os
+import socket
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
+
+# Render Postgres external hostnames use: dpg-<id>-a.<region>-postgres.render.com
+RENDER_POSTGRES_REGIONS = (
+    "oregon",
+    "ohio",
+    "frankfurt",
+    "singapore",
+    "virginia",
+)
 
 
 def normalize_postgres_scheme(url: str) -> str:
@@ -20,31 +30,66 @@ def _is_render_internal_postgres_host(host: str) -> bool:
     return host.startswith("dpg-") and host.endswith("-a") and "." not in host
 
 
-def expand_render_postgres_host(url: str) -> str:
-    """Render internal DB URLs use short hostnames that may not resolve.
+def _region_from_external_url() -> str | None:
+    external = os.environ.get("DATABASE_EXTERNAL_URL", "").strip()
+    if not external:
+        return None
 
-    Expand ``dpg-xxxxx-a`` to ``dpg-xxxxx-a.<region>-postgres.render.com`` when
-    running on Render so DNS lookup succeeds from the web service.
-    """
+    host = urlparse(normalize_postgres_scheme(external)).hostname or ""
+    parts = host.split(".")
+    if len(parts) >= 2 and parts[1].endswith("-postgres"):
+        return parts[1].removesuffix("-postgres").lower()
+    return None
+
+
+def _configured_render_region() -> str | None:
+    for key in ("RENDER_POSTGRES_REGION", "RENDER_REGION"):
+        value = os.environ.get(key, "").strip().lower()
+        if value:
+            return value
+    return _region_from_external_url()
+
+
+def _discover_region_for_host(internal_host: str) -> str | None:
+    for region in RENDER_POSTGRES_REGIONS:
+        candidate = f"{internal_host}.{region}-postgres.render.com"
+        try:
+            socket.getaddrinfo(candidate, 5432, type=socket.SOCK_STREAM)
+            return region
+        except OSError:
+            continue
+    return None
+
+
+def _replace_hostname(url: str, new_host: str) -> str:
+    parsed = urlparse(url)
+    if parsed.username:
+        auth = parsed.username
+        if parsed.password:
+            auth = f"{parsed.username}:{parsed.password}"
+        netloc = f"{auth}@{new_host}"
+        if parsed.port:
+            netloc = f"{netloc}:{parsed.port}"
+    elif parsed.port:
+        netloc = f"{new_host}:{parsed.port}"
+    else:
+        netloc = new_host
+    return urlunparse(parsed._replace(netloc=netloc))
+
+
+def expand_render_postgres_host(url: str) -> str:
+    """Expand Render internal DB hostnames to resolvable external hostnames."""
     parsed = urlparse(url)
     host = parsed.hostname or ""
     if not _is_render_internal_postgres_host(host):
         return url
 
-    region = os.environ.get("RENDER_REGION", "").strip().lower()
+    region = _configured_render_region() or _discover_region_for_host(host)
     if not region:
         return url
 
     external_host = f"{host}.{region}-postgres.render.com"
-    if parsed.port:
-        netloc = f"{parsed.username}:{parsed.password}@{external_host}:{parsed.port}"
-    elif parsed.username:
-        password = f":{parsed.password}" if parsed.password else ""
-        netloc = f"{parsed.username}{password}@{external_host}"
-    else:
-        netloc = external_host
-
-    return urlunparse(parsed._replace(netloc=netloc))
+    return _replace_hostname(url, external_host)
 
 
 def ensure_ssl_for_render(url: str) -> str:

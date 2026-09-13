@@ -13,6 +13,12 @@ from app.core.config import settings
 
 parsed = urlparse(settings.DATABASE_URL)
 print(f"Database host: {parsed.hostname}")
+if parsed.hostname and parsed.hostname.startswith("dpg-") and "." not in parsed.hostname:
+    sys.exit(
+        "Render internal database hostname could not be expanded. "
+        "Set RENDER_POSTGRES_REGION (e.g. singapore) or DATABASE_EXTERNAL_URL "
+        "to the External Database URL from the Render Postgres dashboard."
+    )
 
 for attempt in range(1, 31):
     try:

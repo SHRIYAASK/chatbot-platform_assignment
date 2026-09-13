@@ -458,6 +458,8 @@ New feature endpoints:
 |----------|----------|------------------|
 | `ENVIRONMENT` | Yes | `production` |
 | `DATABASE_URL` | Yes | From linked Postgres (auto) |
+| `RENDER_POSTGRES_REGION` | Yes* | `singapore`, `oregon`, `frankfurt`, etc. (*if internal hostname fails) |
+| `DATABASE_EXTERNAL_URL` | Alt | Paste External Database URL from Postgres dashboard |
 | `SECRET_KEY` | Yes | Random string ≥ 32 chars |
 | `GROQ_API_KEY` | Yes | Groq API key |
 | `EMBEDDING_API_KEY` | Yes* | Hugging Face token (*if `RAG_ENABLED=true`) |

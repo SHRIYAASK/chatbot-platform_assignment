@@ -445,12 +445,49 @@ New feature endpoints:
 | `POST` | `/projects/{id}/conversations/{cid}/voice-token` | User JWT | LiveKit URL + room JWT |
 | `POST` | `/projects/{id}/conversations/{cid}/voice/messages/stream` | Voice service token | SSE token stream into `ChatService` |
 
-## Deployment
+## Deployment (Render + Vercel)
 
-| Platform | Repo config | Notes |
-|----------|-------------|-------|
-| **Render** | `backend/Dockerfile`, `entrypoint.sh` | Set `DATABASE_URL`, `SECRET_KEY`, `GROQ_API_KEY`, `EMBEDDING_*`, `RAG_ENABLED`, `USE_PGVECTOR`, `CORS_ORIGINS` |
-| **Vercel** | `frontend/vercel.json` | Set `VITE_API_URL` to Render API URL at build time |
-| **Voice worker** | Embedded in backend | Set `LIVEKIT_*`, `SARVAM_API_KEY`, `BACKEND_INTERNAL_URL`; `VOICE_AGENT_ENABLED=true` (default) |
+### Render — backend API
 
-Production: enable `USE_PGVECTOR=true` on Render Postgres for RAG. Voice is optional and is disabled until LiveKit credentials are set.
+1. Create a **Web Service** from this repo.
+2. Set **Root Directory** to `backend` (or use Docker: Dockerfile path `backend/Dockerfile`).
+3. **Link a PostgreSQL** database (or paste `DATABASE_URL` / `DATABASE_EXTERNAL_URL`).
+4. Set environment variables:
+
+| Variable | Required | Production value |
+|----------|----------|------------------|
+| `ENVIRONMENT` | Yes | `production` |
+| `DATABASE_URL` | Yes | From linked Postgres (auto) |
+| `SECRET_KEY` | Yes | Random string ≥ 32 chars |
+| `GROQ_API_KEY` | Yes | Groq API key |
+| `EMBEDDING_API_KEY` | Yes* | Hugging Face token (*if `RAG_ENABLED=true`) |
+| `CORS_ORIGINS` | Yes | `https://your-app.vercel.app` |
+| `USE_PGVECTOR` | Yes | `true` |
+| `AUTO_MIGRATE` | Yes | `false` (migrations run in `entrypoint.sh`) |
+| `BACKEND_INTERNAL_URL` | Yes | `http://127.0.0.1:${PORT}` |
+| `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `SARVAM_API_KEY` | Voice | LiveKit + Sarvam credentials |
+| `VOICE_AGENT_ENABLED` | No | `true` (embedded worker) |
+
+5. Deploy. Logs should show `Database is ready.` then `registered worker` (if voice is configured).
+
+A reference blueprint is in [`render.yaml`](render.yaml). Render auto-expands internal Postgres hostnames (`dpg-*-a`) to external URLs with SSL.
+
+### Vercel — frontend
+
+1. Import the repo; set **Root Directory** to `frontend`.
+2. Framework preset: **Vite**.
+3. Add environment variable (Production + Preview):
+
+| Variable | Value |
+|----------|-------|
+| `VITE_API_URL` | `https://your-api.onrender.com` |
+
+4. Deploy. `VITE_API_URL` is baked in at build time — redeploy after changing it.
+
+`frontend/vercel.json` handles SPA routing. CORS allows `*.vercel.app` plus any origins in `CORS_ORIGINS`.
+
+### Production notes
+
+- **File uploads** use local disk on the API container; originals may not survive redeploys. RAG embeddings persist in Postgres.
+- **Voice** runs inside the backend container (no separate `voice-agent` process).
+- Health checks: `/health/live` (liveness), `/health/ready` (database).

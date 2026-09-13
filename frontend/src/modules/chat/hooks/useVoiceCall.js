@@ -120,7 +120,7 @@ export function useVoiceCall(projectId, conversationId, { onTurnComplete } = {})
       if (!agentAlreadyPresent) {
         agentWaitRef.current = setTimeout(() => {
           setError(
-            "Voice agent did not join the room. In a new terminal run: cd voice-agent; python agent.py start",
+            "Voice agent did not join the room. Ensure LiveKit and Sarvam credentials are configured on the backend and the embedded voice worker is running.",
           );
         }, AGENT_JOIN_TIMEOUT_MS);
       }

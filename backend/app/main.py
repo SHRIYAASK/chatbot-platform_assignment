@@ -40,6 +40,13 @@ async def lifespan(app: FastAPI):
 
     configure_logging()
 
+    if settings.is_production:
+        logger.info(
+            "Production mode: database host configured, voice backend=%s, auto_migrate=%s",
+            settings.BACKEND_INTERNAL_URL,
+            settings.AUTO_MIGRATE,
+        )
+
     if settings.RAG_ENABLED and settings.EMBEDDING_PROVIDER.strip().lower() in {"huggingface", "hf", "http"}:
         from app.shared.rag.embedding_service import get_embedding_service
 

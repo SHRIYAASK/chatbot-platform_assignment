@@ -1,8 +1,16 @@
 import axios from "axios";
 import { clearToken, getToken } from "../utils/token.js";
 
+const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
+
+if (import.meta.env.PROD && !configuredApiUrl) {
+  console.error(
+    "VITE_API_URL is not set. Add it in Vercel → Project Settings → Environment Variables, then redeploy.",
+  );
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://127.0.0.1:8002",
+  baseURL: configuredApiUrl || "http://127.0.0.1:8002",
   headers: {
     "Content-Type": "application/json",
   },

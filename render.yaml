@@ -1,0 +1,58 @@
+# Render Blueprint — backend API + PostgreSQL
+# Docs: https://render.com/docs/blueprint-spec
+#
+# For an existing Render project, copy these env vars into the dashboard instead
+# of creating duplicate services from this file.
+
+services:
+  - type: web
+    name: chatbot-platform-api
+    runtime: docker
+    plan: starter
+    region: singapore
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health/live
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: AUTO_MIGRATE
+        value: false
+      - key: USE_PGVECTOR
+        value: true
+      - key: RAG_ENABLED
+        value: true
+      - key: LOG_JSON
+        value: true
+      - key: MODERATION_ENABLED
+        value: true
+      - key: VOICE_AGENT_ENABLED
+        value: true
+      - key: BACKEND_INTERNAL_URL
+        value: http://127.0.0.1:${PORT}
+      - key: CORS_ORIGINS
+        value: https://chatbot-platform-assignment.vercel.app
+      - key: DATABASE_URL
+        fromDatabase:
+          name: chatbot-platform-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: GROQ_API_KEY
+        sync: false
+      - key: EMBEDDING_API_KEY
+        sync: false
+      - key: LIVEKIT_URL
+        sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
+      - key: SARVAM_API_KEY
+        sync: false
+
+databases:
+  - name: chatbot-platform-db
+    plan: basic-256mb
+    databaseName: chatbot
+    user: chatbot

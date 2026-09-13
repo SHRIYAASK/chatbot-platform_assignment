@@ -37,4 +37,6 @@ alembic upgrade head
 
 echo "Starting API server..."
 PORT="${PORT:-8002}"
+export BACKEND_INTERNAL_URL="${BACKEND_INTERNAL_URL:-http://127.0.0.1:${PORT}}"
+echo "Voice worker backend URL: ${BACKEND_INTERNAL_URL}"
 exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT"

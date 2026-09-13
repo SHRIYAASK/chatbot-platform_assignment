@@ -1,6 +1,9 @@
+import os
+
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.core.backend_url import resolve_backend_internal_url
 from app.core.database_url import resolve_database_url
 
 PLACEHOLDER_SECRETS = {
@@ -71,7 +74,7 @@ class Settings(BaseSettings):
     # Start the LiveKit worker inside the API process (local dev / single-container deploy).
     VOICE_AGENT_ENABLED: bool = True
 
-    # Automatically run Alembic migrations on startup (recommended for local dev).
+    # Run Alembic on API startup. Keep false on Render (entrypoint.sh migrates).
     AUTO_MIGRATE: bool = True
 
     model_config = SettingsConfigDict(
@@ -106,17 +109,31 @@ class Settings(BaseSettings):
             "DATABASE_URL",
             resolve_database_url(self.DATABASE_URL, self.DATABASE_EXTERNAL_URL),
         )
+        object.__setattr__(
+            self,
+            "BACKEND_INTERNAL_URL",
+            resolve_backend_internal_url(self.BACKEND_INTERNAL_URL),
+        )
+
+        if os.environ.get("RENDER") and self.AUTO_MIGRATE:
+            object.__setattr__(self, "AUTO_MIGRATE", False)
+
+        if self.is_production and not self.LOG_JSON:
+            object.__setattr__(self, "LOG_JSON", True)
 
         provider = self.EMBEDDING_PROVIDER.strip().lower()
         api_key = self.EMBEDDING_API_KEY.strip()
 
-        if provider in {"huggingface", "hf", "http"}:
-            if api_key.lower() in EMBEDDING_KEY_PLACEHOLDERS:
-                raise ValueError(
-                    "EMBEDDING_API_KEY is required for document search. "
-                    "Create a Hugging Face token at https://huggingface.co/settings/tokens "
-                    "and set EMBEDDING_API_KEY in backend/.env."
-                )
+        if (
+            self.RAG_ENABLED
+            and provider in {"huggingface", "hf", "http"}
+            and api_key.lower() in EMBEDDING_KEY_PLACEHOLDERS
+        ):
+            raise ValueError(
+                "EMBEDDING_API_KEY is required when RAG_ENABLED=true. "
+                "Create a Hugging Face token at https://huggingface.co/settings/tokens "
+                "and set EMBEDDING_API_KEY, or set RAG_ENABLED=false."
+            )
         return self
 
     @property
@@ -125,6 +142,8 @@ class Settings(BaseSettings):
 
     @property
     def is_production(self) -> bool:
+        if os.environ.get("RENDER"):
+            return True
         return self.ENVIRONMENT.strip().lower() in {"production", "prod"}
 
 

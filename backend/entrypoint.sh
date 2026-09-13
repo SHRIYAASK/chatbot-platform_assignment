@@ -47,19 +47,27 @@ for url in _candidate_urls():
                 print("Database is ready.")
                 sys.exit(0)
         except Exception as exc:  # noqa: BLE001
+            message = str(exc)
             print(f"Database not ready ({attempt}/5): {exc}")
-            if "could not translate host name" in str(exc):
+            if "could not translate host name" in message:
+                break
+            if "password authentication failed" in message:
+                print(
+                    "Password rejected — DATABASE_URL is stale. "
+                    "On Render: Postgres → Connect → copy a fresh Internal or External URL, "
+                    "replace DATABASE_URL on the web service (or unlink/re-link the database), then redeploy."
+                )
                 break
             time.sleep(2)
 
 print(
     "ERROR: Could not connect to PostgreSQL.\n"
     "Fix on Render (Web Service → Environment):\n"
-    "  1. Open your PostgreSQL service — confirm status is Available.\n"
-    "  2. If deleted, create a new Postgres DB and link it to this web service.\n"
-    "  3. Copy External Database URL from Postgres → Connections.\n"
-    "  4. Set DATABASE_EXTERNAL_URL to that URL (must include ?sslmode=require).\n"
-    "  5. Save and redeploy.\n"
+    "  1. Postgres → Connect → copy the current Internal Database URL.\n"
+    "  2. Replace DATABASE_URL on the web service with that exact value.\n"
+    "     (Or remove DATABASE_URL and Add from Database again to re-link.)\n"
+    "  3. If using external access, set DATABASE_EXTERNAL_URL with ?sslmode=require.\n"
+    "  4. Save and redeploy.\n"
     "Starting HTTP server anyway; /health/ready will stay not_ready until DB works."
 )
 sys.exit(1)

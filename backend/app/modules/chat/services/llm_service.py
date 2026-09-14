@@ -192,34 +192,36 @@ class LLMService:
         primary = primary_model or settings.PRIMARY_MODEL
         fallback = fallback_model or settings.FALLBACK_MODEL
 
-        primary_result, primary_response, primary_exc = await cls._call_model(primary, messages)
-        if primary_result is not None:
-            return primary_result
-
-        if not cls._should_fallback(primary_response, primary_exc):
-            raise LLMServiceError(
-                "The AI service is temporarily unavailable. Please try again."
+        accumulated: list[str] = []
+        try:
+            async for chunk in cls.stream_reply(messages, primary_model=primary, fallback_model=fallback):
+                accumulated.append(chunk)
+            content = "".join(accumulated).strip()
+            if not content:
+                # Fallback to direct call if stream was empty
+                res, _, _ = await cls._call_model(primary, messages)
+                if res and res.content:
+                    return res
+                res_fb, _, _ = await cls._call_model(fallback, messages)
+                if res_fb and res_fb.content:
+                    return res_fb
+                raise LLMServiceError("The AI service returned an empty response.")
+            return LLMResult(
+                content=content,
+                model_used=primary,
+                token_count=None,
             )
-
-        logger.info("Primary model failed (%s). Retrying with fallback model.", primary)
-
-        fallback_result, fallback_response, fallback_exc = await cls._call_model(fallback, messages)
-        if fallback_result is not None:
-            return fallback_result
-
-        if fallback_response is not None:
-            raise LLMServiceError(
-                "The AI service is temporarily unavailable. Please try again."
-            )
-
-        if fallback_exc is not None:
-            if isinstance(fallback_exc, httpx.TimeoutException):
-                raise LLMServiceError("The AI service timed out. Please try again.") from fallback_exc
-            raise LLMServiceError(
-                "The AI service is temporarily unavailable. Please try again."
-            ) from fallback_exc
-
-        raise LLMServiceError("The AI service is temporarily unavailable. Please try again.")
+        except LLMServiceError:
+            raise
+        except Exception as exc:
+            logger.warning("Streaming generate_reply failed: %s. Trying direct call.", exc)
+            res, _, _ = await cls._call_model(primary, messages)
+            if res is not None:
+                return res
+            res_fb, _, _ = await cls._call_model(fallback, messages)
+            if res_fb is not None:
+                return res_fb
+            raise LLMServiceError("The AI service is temporarily unavailable. Please try again.") from exc
 
     @classmethod
     async def _stream_model(

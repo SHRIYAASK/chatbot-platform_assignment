@@ -4,8 +4,9 @@ from app.core.config import settings
 
 # Legacy placeholder names stored before Groq integration was finalized.
 LEGACY_MODEL_MAP: dict[str, str] = {
-    "grok-opus-4-120b": settings.PRIMARY_MODEL,
-    "llama-3.3-70b": settings.FALLBACK_MODEL,
+    "grok-opus-4-120b": "openai/gpt-oss-120b",
+    "gpt-oss-120b": "openai/gpt-oss-120b",
+    "llama-3.3-70b": "llama-3.3-70b-versatile",
 }
 
 

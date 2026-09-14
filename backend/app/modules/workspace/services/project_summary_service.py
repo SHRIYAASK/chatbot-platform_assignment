@@ -18,6 +18,7 @@ from app.modules.workspace.schemas.project import ProjectSummary
 MODEL_DISPLAY_NAMES: dict[str, str] = {
     "openai/gpt-oss-120b": "GPT OSS 120B",
     "llama-3.3-70b-versatile": "Llama 3.3 70B",
+    "llama-3.1-8b-instant": "Llama 3.1 8B",
 }
 
 

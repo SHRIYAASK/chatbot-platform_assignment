@@ -14,6 +14,7 @@ from app.modules.voice.dependencies.service_auth import get_voice_service_contex
 from app.modules.voice.schemas.voice import VoiceMessageCreate, VoiceTokenResponse
 from app.modules.voice.services.service_token import VoiceServiceContext
 from app.modules.voice.services.voice_token_service import (
+    VoiceAgentDispatchError,
     VoiceNotConfiguredError,
     VoiceTokenService,
 )
@@ -25,7 +26,7 @@ router = APIRouter(
 
 
 @router.post("/voice-token", response_model=VoiceTokenResponse)
-def create_voice_token(
+async def create_voice_token(
     project_id: int,
     conversation_id: int,
     db: Session = Depends(get_db),
@@ -34,12 +35,17 @@ def create_voice_token(
     ConversationService.get_conversation(db, current_user, project_id, conversation_id)
 
     try:
-        livekit_url, token, room_name = VoiceTokenService.mint_token(
+        livekit_url, token, room_name = await VoiceTokenService.mint_token(
             current_user=current_user,
             project_id=project_id,
             conversation_id=conversation_id,
         )
     except VoiceNotConfiguredError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+    except VoiceAgentDispatchError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),

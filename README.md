@@ -445,7 +445,24 @@ New feature endpoints:
 | `POST` | `/projects/{id}/conversations/{cid}/voice-token` | User JWT | LiveKit URL + room JWT |
 | `POST` | `/projects/{id}/conversations/{cid}/voice/messages/stream` | Voice service token | SSE token stream into `ChatService` |
 
-## Deployment (Render + Vercel)
+## Deployment (Render / Railway + Vercel)
+
+### Railway — backend API
+
+Use **Docker** with [`backend/Dockerfile`](backend/Dockerfile) (root directory `backend`). Set the same variables as Render where applicable:
+
+| Variable | Production value |
+|----------|------------------|
+| `ENVIRONMENT` | `production` |
+| `DATABASE_URL` | Railway Postgres URL |
+| `SECRET_KEY`, `GROQ_API_KEY`, `EMBEDDING_API_KEY` | As for Render |
+| `CORS_ORIGINS` | Your Vercel production URL |
+| `AUTO_MIGRATE` | `false` (migrations in `entrypoint.sh`) |
+| `VOICE_API_BASE_URL` | `http://127.0.0.1:${PORT}` or leave unset (`entrypoint.sh` sets it) |
+| `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `SARVAM_API_KEY` | Same LiveKit Cloud project |
+| `VOICE_AGENT_ENABLED` | `true` |
+
+After deploy, confirm logs: `Embedded voice agent worker started (pid=...)`, `registered worker`, and on a voice call `Voice agent job received` / `Joining voice room`. In **LiveKit Cloud → Agents**, the worker should show connected; during a call, room `conv-<conversationId>` should include an agent participant. Do not run another dev machine worker against the same LiveKit API key.
 
 ### Render — backend API
 

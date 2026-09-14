@@ -118,10 +118,12 @@ export function useVoiceCall(projectId, conversationId, { onTurnComplete } = {})
 
       const agentAlreadyPresent = [...room.remoteParticipants.values()].some(isAgentParticipant);
       if (!agentAlreadyPresent) {
-        agentWaitRef.current = setTimeout(() => {
+        agentWaitRef.current = setTimeout(async () => {
+          agentWaitRef.current = null;
           setError(
             "Voice agent did not join the room. Ensure LiveKit and Sarvam credentials are configured on the backend and the embedded voice worker is running.",
           );
+          await disconnect();
         }, AGENT_JOIN_TIMEOUT_MS);
       }
 

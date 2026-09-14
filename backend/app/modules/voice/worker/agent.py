@@ -269,6 +269,13 @@ server = AgentServer(**_agent_server_options())
 
 @server.rtc_session(agent_name=VOICE_AGENT_NAME)
 async def entrypoint(ctx: agents.JobContext):
+    job_id = getattr(ctx.job, "id", None) or getattr(ctx.job, "job_id", None)
+    room_name = getattr(ctx.room, "name", None) or "unknown"
+    logger.info(
+        "Voice agent job received job_id=%s room=%s",
+        job_id,
+        room_name,
+    )
     await ctx.connect()
     backend_ctx = _parse_metadata(ctx)
     logger.info(

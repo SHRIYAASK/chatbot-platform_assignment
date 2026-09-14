@@ -1,5 +1,5 @@
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -98,13 +98,26 @@ def test_voice_token_success(client, auth_headers, livekit_env):
     mock_token.with_room_config.return_value = mock_token
     mock_token.to_jwt.return_value = "mock-livekit-jwt"
 
-    with patch("app.modules.voice.services.voice_token_service.api.AccessToken", return_value=mock_token):
+    mock_lkapi = MagicMock()
+    mock_lkapi.agent_dispatch.create_dispatch = AsyncMock()
+    mock_lkapi_cm = MagicMock()
+    mock_lkapi_cm.__aenter__ = AsyncMock(return_value=mock_lkapi)
+    mock_lkapi_cm.__aexit__ = AsyncMock(return_value=None)
+
+    with (
+        patch("app.modules.voice.services.voice_token_service.api.AccessToken", return_value=mock_token),
+        patch(
+            "app.modules.voice.services.voice_token_service.api.LiveKitAPI",
+            return_value=mock_lkapi_cm,
+        ),
+    ):
         response = client.post(
             _voice_token_url(project_id, conversation_id),
             headers=auth_headers,
         )
 
     assert response.status_code == 200
+    mock_lkapi.agent_dispatch.create_dispatch.assert_awaited_once()
     payload = response.json()
     assert payload["livekit_url"] == "wss://test.livekit.cloud"
     assert payload["token"] == "mock-livekit-jwt"

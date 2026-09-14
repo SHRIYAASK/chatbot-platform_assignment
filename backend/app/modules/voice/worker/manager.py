@@ -2,6 +2,7 @@ import logging
 import os
 import subprocess
 import sys
+import threading
 from pathlib import Path
 
 from app.core.config import settings
@@ -9,6 +10,14 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 _process: subprocess.Popen | None = None
+
+
+def _forward_worker_logs(proc: subprocess.Popen) -> None:
+    stream = proc.stdout
+    if stream is None:
+        return
+    for line in stream:
+        logger.info("[voice-worker] %s", line.rstrip())
 
 
 def voice_agent_configured() -> bool:
@@ -61,7 +70,18 @@ def start_embedded_voice_agent() -> bool:
         cmd,
         cwd=backend_root,
         env=_worker_env(),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
     )
+    logger.info("Embedded voice agent worker started (pid=%s)", _process.pid)
+    threading.Thread(
+        target=_forward_worker_logs,
+        args=(_process,),
+        name="voice-worker-log-forwarder",
+        daemon=True,
+    ).start()
     return True
 
 

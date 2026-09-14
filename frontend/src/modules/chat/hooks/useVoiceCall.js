@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ParticipantKind, Room, RoomEvent, Track } from "livekit-client";
 import { fetchVoiceToken } from "../services/voiceService.js";
 
-const AGENT_JOIN_TIMEOUT_MS = 20000;
+const AGENT_JOIN_TIMEOUT_MS = 35000;
 
 function isAgentParticipant(participant) {
   return (

@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import Navbar from "./shared/components/Navbar.jsx";
 import Toast from "./shared/components/Toast.jsx";
 import ErrorBoundary from "./shared/components/ErrorBoundary.jsx";
@@ -11,20 +11,23 @@ import { AuthProvider, useAuth } from "./modules/authentication/context/AuthCont
 import Login from "./modules/authentication/pages/Login.jsx";
 import Register from "./modules/authentication/pages/Register.jsx";
 import Dashboard from "./modules/workspace/pages/Dashboard.jsx";
+import LandingPage from "./shared/pages/LandingPage.jsx";
 
 const ProjectChat = lazy(() => import("./modules/chat/pages/ProjectChat.jsx"));
 const ProjectDetails = lazy(() => import("./modules/workspace/pages/ProjectDetails.jsx"));
 
 function AppLayout() {
   const { user, logout } = useAuth();
+  const location = useLocation();
+  const isLanding = location.pathname === "/";
 
   return (
     <>
-      <Navbar user={user} onLogout={user ? logout : null} />
+      {isLanding ? null : <Navbar user={user} onLogout={user ? logout : null} />}
       <Toast />
       <ErrorBoundary>
         <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route

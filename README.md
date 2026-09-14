@@ -1,14 +1,16 @@
-# Chatbot Platform
+# Synora
 
-Multi-tenant AI assistant: users create projects with custom instructions (optionally AI-rewritten before save), upload knowledge documents, and chat or speak with a Groq-powered LLM augmented by RAG (retrieval over PostgreSQL/pgvector).
+**Multi-Tenant AI Assistant & Knowledge Platform** — personalized AI assistants with custom system prompts, document-based RAG, persistent conversational memory, and real-time WebRTC voice (LiveKit + Sarvam). Repository folder: `chatbot-platform`.
 
 ## Live demo
 
+Set URLs in your deployment dashboards; the frontend landing page at `/` explains architecture for reviewers (use **Try Synora** to open the app).
+
 | Service | URL |
 |---------|-----|
-| Frontend | https://chatbot-platform-assignment.vercel.app |
-| Backend API | https://chatbot-platform-assignment-gcfp.onrender.com |
-| API docs | https://chatbot-platform-assignment-gcfp.onrender.com/docs |
+| Frontend (Vercel) | `https://<your-app>.vercel.app` — marketing at `/`, app at `/login` and `/dashboard` |
+| Backend API (Railway) | `https://<your-service>.up.railway.app` — set `VITE_API_URL` to this on Vercel |
+| API docs | `{VITE_API_URL}/docs` |
 
 ## Features
 
@@ -33,15 +35,23 @@ Multi-tenant AI assistant: users create projects with custom instructions (optio
 | Chat LLM | Groq API |
 | Embeddings | Hugging Face (`BAAI/bge-small-en-v1.5`, dim 384) |
 | Voice (optional) | LiveKit Cloud + Sarvam STT/TTS + embedded voice worker |
-| Hosting | Vercel (frontend), Render (API + Postgres), Docker Compose (local) |
+| Hosting | Vercel (frontend), Railway (API + Postgres), Docker Compose (local) |
 
 ---
 
 ## Architecture & design
 
+> Mermaid diagrams below are mirrored on the Synora landing page (`frontend/src/shared/content/architectureContent.js`). Keep both in sync when flows change.
+
 ### Overview
 
 Registered users own **projects** (title, `description`, model settings), **conversations**, and optional **documents**. Tenancy is enforced by `user_id`. Chat uses project instructions plus optional RAG when `RAG_ENABLED=true`. Optional voice calls use LiveKit + an embedded voice worker (started with the API) that streams through the same `ChatService` pipeline (moderation, RAG, Groq, persistence). Project descriptions can be rewritten with Groq in a review-and-confirm UI; only confirmed text is saved.
+
+### High-level design (HLD)
+
+- **Actors:** end user (browser), optional interviewer/reviewer (landing page at `/`).
+- **Deploy:** React SPA on Vercel; FastAPI Docker on Railway with PostgreSQL + pgvector; optional LiveKit Cloud + Sarvam; embedded voice worker runs in the API container.
+- **External:** Groq (chat), Hugging Face (embeddings), LiveKit (WebRTC), Sarvam (STT/TTS).
 
 ```mermaid
 flowchart LR
@@ -62,14 +72,14 @@ flowchart TB
     subgraph Vercel["Vercel"]
         FE[Static build]
     end
-    subgraph Render["Render"]
+    subgraph Railway["Railway"]
         API[FastAPI Docker]
         PG[(PostgreSQL + pgvector)]
         FS[uploads/]
-    end
-    subgraph Voice["Voice optional"]
-        LK[LiveKit Cloud]
         VA[embedded voice worker]
+    end
+    subgraph VoiceCloud["Voice optional"]
+        LK[LiveKit Cloud]
         SV[Sarvam STT/TTS]
     end
     subgraph External["External AI"]
@@ -87,6 +97,22 @@ flowchart TB
     VA --> SV
     VA -->|HTTP SSE| API
 ```
+
+### Low-level design (LLD)
+
+**Frontend** (`frontend/src/modules/`):
+
+| Module | Responsibility |
+|--------|----------------|
+| `authentication` | Login, register, JWT in localStorage, `ProtectedRoute` |
+| `workspace` | Project dashboard, create/edit, Enhance-with-AI modal |
+| `chat` | Conversations, messages, document upload, `useVoiceCall` |
+
+**Backend** (`backend/app/modules/`): routers → services → `shared/` (RAG, LLM, guardrails). Voice worker under `modules/voice/worker/` calls the API via SSE.
+
+**Tenancy:** JWT on every request; `user_id` + `project_id` scope all queries and vector search.
+
+**Data:** `users`, `projects`, `conversations`, `chat_messages`, `documents`, `document_chunks` (pgvector on child chunks).
 
 Modular monolith — one FastAPI deploy, domain-separated modules:
 
@@ -106,6 +132,7 @@ chatbot-platform/
 
 | Route | Purpose |
 |-------|---------|
+| `/` | Synora landing (architecture overview, **Try Synora** → login or dashboard) |
 | `/login`, `/register` | Authentication |
 | `/dashboard` | Project list |
 | `/projects/:id`, `/projects/:id/c/:conversationId` | Chat |
@@ -156,41 +183,68 @@ flowchart LR
 
 ### Authentication
 
-JWT (HS256), bcrypt passwords, `sub` = user email, default expiry 30 minutes. Endpoints: `POST /auth/register`, `POST /auth/login`, `GET /auth/me`.
+JWT (HS256), bcrypt passwords, `sub` = user email, default expiry 30 minutes. Endpoints: `POST /auth/register`, `POST /auth/login`, `GET /auth/me`. Axios attaches `Authorization: Bearer`; `401` clears the token.
 
 ```mermaid
 sequenceDiagram
-    participant U as User
-    participant FE as React
+    participant User
+    participant SPA as React_SPA
     participant API as FastAPI
     participant DB as PostgreSQL
-    U->>FE: Login
-    FE->>API: POST /auth/login
-    API->>DB: Verify credentials
-    API-->>FE: JWT
-    FE->>API: Bearer token on requests
-    API->>DB: Scoped data
+    User->>SPA: Register_or_login
+    SPA->>API: POST_auth_register_or_login
+    API->>DB: Create_or_verify_user
+    API-->>SPA: access_token_JWT
+    SPA->>SPA: Store_token_localStorage
+    SPA->>API: GET_auth_me_Bearer
+    API-->>SPA: User_profile
+    Note over SPA,API: Protected routes send Authorization header
 ```
 
 ### Chat & RAG
 
-**Flow:** moderation (optional) → retrieve top-5 child chunks → expand to parent text (max 12,000 chars) → layered prompt → Groq → persist messages.
+**Flow:** moderation (optional) → retrieve top-5 child chunks → expand to parent text (max 12,000 chars) → layered prompt → Groq → output moderation (optional) → persist messages.
 
 ```mermaid
 sequenceDiagram
-    participant FE as Chat UI
-    participant ChatSvc as ChatService
-    participant RetSvc as RetrievalService
-    participant Groq as Groq API
-    FE->>ChatSvc: POST message
-    ChatSvc->>RetSvc: retrieve_context
-    RetSvc-->>ChatSvc: RAG excerpts
-    ChatSvc->>Groq: generate_reply
-    Groq-->>ChatSvc: Response
-    ChatSvc-->>FE: Messages saved
+    participant UI as Chat_UI
+    participant API as ChatService
+    participant Mod as Moderation
+    participant RAG as RetrievalService
+    participant Groq as Groq
+    participant DB as PostgreSQL
+    UI->>API: POST_message
+    API->>Mod: check_input_optional
+    API->>RAG: top_k_child_chunks
+    RAG->>DB: pgvector_similarity
+    RAG-->>API: parent_context
+    API->>Groq: layered_prompt
+    Groq-->>API: reply
+    API->>Mod: check_output_optional
+    API->>DB: save_user_and_assistant_messages
+    API-->>UI: response
 ```
 
-**Indexing:** upload → `status=processing` → background extract/chunk/embed child chunks → `ready`. Parent chunks ~1200 tokens (1000–1500); child ~250 (200–300). Embeddings on child chunks only; retrieval expands to parent text.
+**Document indexing:**
+
+```mermaid
+sequenceDiagram
+    participant UI as Upload_UI
+    participant API as DocumentService
+    participant BG as BackgroundTasks
+    participant HF as HuggingFace
+    participant DB as PostgreSQL
+    UI->>API: POST_document
+    API->>DB: status_processing
+    API-->>UI: 201_Created
+    API->>BG: extract_chunk_embed
+    BG->>HF: embed_texts
+    HF-->>BG: vectors
+    BG->>DB: document_chunks_ready
+    BG->>DB: status_ready
+```
+
+Parent chunks ~1200 tokens (1000–1500); child ~250 (200–300). Embeddings on child chunks only; retrieval expands to parent text.
 
 **Prompt order:** (1) platform guardrails + (2) project `description` + (3) response style → optional RAG system message → history → user message. The `prompts` table is CRUD-only; live chat uses `Project.description`.
 
@@ -233,28 +287,28 @@ Voice is another **transport** into `ChatService`, not a second chatbot. Audio u
 sequenceDiagram
     participant FE as Browser
     participant API as FastAPI
-    participant LK as LiveKit
-    participant VA as embedded voice worker
+    participant LK as LiveKit_Cloud
+    participant VA as embedded_worker
     participant SV as Sarvam
-
-    FE->>API: POST voice-token JWT
-    API-->>FE: livekit_url + room JWT
-    FE->>LK: Room.connect WebRTC
-    LK->>VA: dispatch chatbot-voice-agent
-    VA->>LK: join room
-    FE->>LK: microphone
+    FE->>API: POST_voice_token
+    API->>LK: AgentDispatch_create_dispatch
+    API-->>FE: livekit_url_and_JWT
+    FE->>LK: WebRTC_connect_room
+    LK->>VA: dispatch_job
+    VA->>LK: join_room
+    FE->>LK: publish_mic
     LK->>VA: audio
     VA->>SV: STT
-    VA->>API: POST voice/messages/stream SSE
-    API-->>VA: Groq token deltas
+    VA->>API: POST_voice_messages_stream_SSE
+    API-->>VA: ChatService_stream_deltas
     VA->>SV: TTS
-    VA->>LK: agent audio
+    VA->>LK: agent_audio
     LK->>FE: playback
 ```
 
 | Piece | Role |
 |-------|------|
-| `POST .../voice-token` | User JWT; mints LiveKit room token + short-lived service token in room metadata |
+| `POST .../voice-token` | User JWT; **explicit** LiveKit agent dispatch + room JWT + service token metadata |
 | `POST .../voice/messages/stream` | Service-token auth; SSE from `ChatService.stream_message` (moderation, RAG, Groq, persist) |
 | `app/modules/voice/worker/` | Embedded `livekit-agents` worker: Sarvam STT/TTS, Silero VAD, `PassthroughLLM` so inference stays on this backend |
 | Frontend `useVoiceCall` | `livekit-client` connects, publishes mic, attaches agent audio |
@@ -281,7 +335,7 @@ Room name is `conv-{conversationId}`. Text and voice share the same conversation
 | React + Vite | Interactive chat UI; SPA + JWT REST |
 | Postgres + pgvector | One DB for relational + vector data |
 | Modular monolith | Simple deploy; clear domain boundaries |
-| JWT | Stateless auth for SPA on Render |
+| JWT | Stateless auth for SPA on Vercel/Railway |
 | Background indexing | Fast upload response; embed after 201 |
 | Stateless description rewrite | User confirms AI text before it becomes the system prompt |
 | Voice via LiveKit | Real-time audio without a custom WebRTC stack; same ChatService as text |
@@ -341,6 +395,7 @@ See [`backend/.env.example`](backend/.env.example) for all settings (`GROQ_*`, `
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `VITE_API_URL` | No | `http://127.0.0.1:8002` | Backend URL (build-time) |
+| `VITE_GITHUB_REPO_URL` | No | — | Optional link on Synora landing page |
 | `VITE_LIVEKIT_URL` | No | — | Optional fallback if the voice-token API omits a URL |
 
 ---
@@ -498,7 +553,8 @@ A reference blueprint is in [`render.yaml`](render.yaml). **Link Postgres** to t
 
 | Variable | Value |
 |----------|-------|
-| `VITE_API_URL` | `https://your-api.onrender.com` |
+| `VITE_API_URL` | `https://your-service.up.railway.app` |
+| `VITE_GITHUB_REPO_URL` | Optional — repo link on landing page |
 
 4. Deploy. `VITE_API_URL` is baked in at build time — redeploy after changing it.
 

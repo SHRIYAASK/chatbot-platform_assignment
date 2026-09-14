@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { ArrowLeft, LogOut } from "lucide-react";
+import { PRODUCT_NAME } from "../config/branding.js";
 
 export default function Navbar({ user, onLogout }) {
   const location = useLocation();
@@ -19,7 +20,7 @@ export default function Navbar({ user, onLogout }) {
             </Link>
           ) : null}
           <Link to="/dashboard" className="text-lg font-semibold text-brand-700">
-            Chatbot Platform
+            {PRODUCT_NAME}
           </Link>
         </div>
         <div className="flex items-center gap-4">

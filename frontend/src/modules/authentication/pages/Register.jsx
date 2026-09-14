@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import Button from "../../../shared/components/Button.jsx";
 import Input from "../../../shared/components/Input.jsx";
+import { PRODUCT_NAME } from "../../../shared/config/branding.js";
 import { useToast } from "../../../shared/hooks/useToast.jsx";
 import { formatApiDetail } from "../../../shared/utils/formatApiDetail.js";
 import { registerUser } from "../services/authService.js";
@@ -60,9 +61,12 @@ export default function Register() {
   };
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-73px)] max-w-md items-center px-4 py-10">
-      <div className="w-full rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-bold text-slate-900">Register</h1>
+    <div className="mx-auto flex min-h-[calc(100vh-4.25rem)] max-w-md items-center px-4 py-10">
+      <div className="card-surface w-full p-8">
+        <Link to="/" className="text-sm font-medium text-brand-600 hover:text-brand-700">
+          {PRODUCT_NAME}
+        </Link>
+        <h1 className="mt-3 text-2xl font-bold text-slate-900">Register</h1>
         <p className="mt-2 text-sm text-slate-600">
           Create an account to start building AI assistants.
         </p>

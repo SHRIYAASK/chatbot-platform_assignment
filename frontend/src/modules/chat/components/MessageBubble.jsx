@@ -9,8 +9,8 @@ function MessageBubble({ message }) {
       <div
         className={`rounded-2xl px-4 py-3 text-sm shadow-sm ${
           isUser
-            ? "max-w-[85%] bg-brand-600 text-white"
-            : "w-full max-w-[min(100%,800px)] border border-slate-200 bg-white text-slate-800"
+            ? "max-w-[85%] rounded-br-md bg-brand-600 text-white"
+            : "w-full max-w-[min(100%,800px)] rounded-bl-md border border-slate-200/80 bg-white text-slate-800"
         }`}
       >
         {isUser ? (

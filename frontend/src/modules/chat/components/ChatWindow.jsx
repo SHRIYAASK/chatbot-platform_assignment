@@ -27,7 +27,7 @@ export default function ChatWindow({
   };
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col bg-slate-50">
+    <div className="relative flex min-h-0 flex-1 flex-col bg-gradient-to-b from-slate-50 to-white">
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
@@ -37,7 +37,7 @@ export default function ChatWindow({
           <Loader label="Loading chat history..." />
         ) : messages.length === 0 ? (
           <div className="flex h-full min-h-[320px] items-center justify-center">
-            <div className="text-center">
+            <div className="card-surface max-w-md px-6 py-8 text-center">
               <p className="text-lg font-medium text-slate-900">Start the conversation</p>
               <p className="mt-2 text-sm text-slate-600">
                 Send a message to begin chatting with this AI agent.

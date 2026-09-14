@@ -18,14 +18,14 @@ export default function ChatSidebar({
   onDeleteConversation,
 }) {
   return (
-    <aside className="hidden w-80 shrink-0 flex-col border-r border-slate-200 bg-white lg:flex">
+    <aside className="hidden w-80 shrink-0 flex-col border-r border-slate-200/80 bg-slate-50/90 lg:flex">
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="border-b border-slate-200 px-4 py-4">
+        <div className="border-b border-slate-200/80 px-4 py-4">
           <button
             type="button"
             onClick={onCreateConversation}
             disabled={creatingConversation}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-3 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-brand-700 hover:shadow disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Plus className="h-4 w-4" />
             {creatingConversation ? "Creating..." : "New Chat"}
@@ -50,7 +50,7 @@ export default function ChatSidebar({
 
           <Link
             to={`/projects/${project.id}/settings`}
-            className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
           >
             <Settings className="h-4 w-4 text-slate-500" />
             Project Settings

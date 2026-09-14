@@ -16,7 +16,7 @@ export default function Toast() {
   return (
     <div className="fixed bottom-6 right-6 z-[60] max-w-sm">
       <div
-        className={`rounded-lg px-4 py-3 text-sm font-medium text-white shadow-lg ${styles[toast.type] || styles.info}`}
+        className={`rounded-xl px-4 py-3 text-sm font-medium text-white shadow-card ${styles[toast.type] || styles.info}`}
       >
         {toast.message}
       </div>

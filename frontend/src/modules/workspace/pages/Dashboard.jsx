@@ -50,10 +50,10 @@ export default function Dashboard() {
   };
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <main className="page-shell">
+      <div className="card-surface flex flex-col gap-4 bg-gradient-to-r from-white to-brand-50/60 p-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
             Welcome, {user?.name}
           </h1>
           <p className="mt-2 text-slate-600">
@@ -74,7 +74,7 @@ export default function Dashboard() {
         {loading ? (
           <Loader label="Loading projects..." />
         ) : projects.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
+          <div className="rounded-2xl border border-dashed border-brand-200 bg-white/80 p-10 text-center shadow-sm">
             <h3 className="text-lg font-semibold text-slate-900">No projects yet</h3>
             <p className="mt-2 text-sm text-slate-600">
               Create your first AI assistant project to get started.

@@ -49,7 +49,7 @@ export default function ProjectCard({ project, onEdit, onDelete }) {
   const navigate = useNavigate();
 
   return (
-    <article className="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+    <article className="card-surface flex h-full flex-col p-5 transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold text-slate-900">{project.title}</h3>

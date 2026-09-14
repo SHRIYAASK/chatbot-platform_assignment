@@ -13,10 +13,10 @@ export default function ConversationItem({
 }) {
   return (
     <div
-      className={`group flex items-start gap-2 rounded-lg border-l-2 px-2 py-2 transition ${
+      className={`group flex items-start gap-2 rounded-xl border-l-2 px-2 py-2 transition ${
         isActive
-          ? "border-brand-600 bg-brand-50 text-brand-900"
-          : "border-transparent text-slate-700 hover:bg-slate-100"
+          ? "border-brand-600 bg-white text-brand-900 shadow-sm"
+          : "border-transparent text-slate-700 hover:bg-white/80"
       }`}
     >
       <button

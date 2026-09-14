@@ -34,7 +34,7 @@ export default function ProjectSummaryGrid({ summary }) {
   };
 
   return (
-    <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+    <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-slate-50/80">
       <div className="grid grid-cols-2 divide-x divide-slate-200 border-b border-slate-200">
         <SummaryCell label="Messages" value={formatCount(data.messages)} />
         <SummaryCell label="Chats" value={formatCount(data.conversations)} />

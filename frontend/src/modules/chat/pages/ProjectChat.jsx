@@ -167,7 +167,7 @@ export default function ProjectChat() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-73px)] flex-col">
+    <div className="flex h-[calc(100vh-4.25rem)] flex-col">
       <ChatHeader project={project} />
       <div className="flex min-h-0 flex-1">
         <ChatSidebar

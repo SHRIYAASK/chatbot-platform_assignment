@@ -5,7 +5,7 @@ import { useProject } from "../hooks/useProject.js";
 
 function DetailRow({ label, value }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
+    <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
         {label}
       </p>
@@ -28,7 +28,7 @@ export default function ProjectDetails() {
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="card-surface p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-slate-900">{project.title}</h1>
@@ -43,7 +43,7 @@ export default function ProjectDetails() {
           <DetailRow label="Last Updated" value={formatDate(project.updated_at)} />
         </div>
 
-        <div className="mt-6 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+        <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
           <p className="text-sm text-slate-600">
             Chat module will be implemented next.
           </p>

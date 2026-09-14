@@ -57,7 +57,7 @@ export default function MermaidDiagram({ chart, title }) {
   }, [chart, diagramId]);
 
   return (
-    <figure className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <figure className="card-surface p-4">
       {title ? (
         <figcaption className="mb-3 text-sm font-semibold text-slate-800">{title}</figcaption>
       ) : null}

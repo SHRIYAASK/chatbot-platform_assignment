@@ -40,7 +40,7 @@ export default function MessageInput({
   return (
     <form
       onSubmit={isGenerating ? handleStop : handleSubmit}
-      className="border-t border-slate-200 bg-white px-4 py-4 sm:px-6"
+      className="border-t border-slate-200/80 bg-white/90 px-4 py-4 backdrop-blur-sm sm:px-6"
     >
       <div className="flex gap-3">
         <textarea
@@ -50,7 +50,7 @@ export default function MessageInput({
           rows={2}
           placeholder={isGenerating ? "Generating response..." : "Type your message..."}
           disabled={disabled}
-          className="min-h-[48px] flex-1 resize-none rounded-xl border border-slate-300 px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:bg-slate-100"
+          className="min-h-[48px] flex-1 resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm shadow-sm transition focus:border-brand-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:bg-slate-100"
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey && !isGenerating) {
               event.preventDefault();

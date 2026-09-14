@@ -2,8 +2,20 @@ import json
 import logging
 import os
 import re
+import sys
 from dataclasses import dataclass
 from typing import Any, AsyncIterable
+
+# Register all SQLAlchemy models in worker process so mappers are fully initialized
+from app.modules.authentication.models.user import User  # noqa: F401
+from app.modules.chat.models.chat_message import ChatMessage  # noqa: F401
+from app.modules.chat.models.conversation import Conversation  # noqa: F401
+from app.modules.chat.models.document import Document  # noqa: F401
+from app.modules.chat.models.document_chunk import DocumentChunk  # noqa: F401
+from app.modules.file_upload.models.file import ProjectFile  # noqa: F401
+from app.modules.prompt_management.models.prompt import Prompt  # noqa: F401
+from app.modules.workspace.models.project import Project  # noqa: F401
+from app.shared.guardrails.moderation.models import ModerationEvent  # noqa: F401
 
 from livekit import agents
 from livekit.agents import Agent, AgentServer, AgentSession, ModelSettings, inference, llm, room_io
@@ -16,6 +28,13 @@ from app.modules.voice.services.voice_token_service import VOICE_AGENT_NAME
 from app.modules.voice.worker.backend_client import stream_chat
 
 logger = logging.getLogger("voice-agent")
+if not logger.handlers:
+    _handler = logging.StreamHandler(sys.stdout)
+    _handler.setFormatter(
+        logging.Formatter("%(asctime)s [%(levelname)s] [voice-agent] %(message)s")
+    )
+    logger.addHandler(_handler)
+logger.setLevel(logging.INFO)
 
 DEFAULT_LANGUAGE = "en-IN"
 INDIC_SCRIPT = re.compile(r"[\u0900-\u097F\u0980-\u09FF\u0A00-\u0A7F\u0A80-\u0AFF]")

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import Button from "../../../shared/components/Button.jsx";
 import Input from "../../../shared/components/Input.jsx";
 import { useToast } from "../../../shared/hooks/useToast.jsx";
@@ -9,8 +9,6 @@ import { useAuth } from "../context/AuthContext.jsx";
 export default function Login() {
   const { login, isAuthenticated } = useAuth();
   const { showError, showSuccess } = useToast();
-  const [searchParams] = useSearchParams();
-  const sessionExpired = searchParams.get("reason") === "session_expired";
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -50,11 +48,6 @@ export default function Login() {
         <p className="mt-2 text-sm text-slate-600">
           Sign in to access your workspace.
         </p>
-        {sessionExpired ? (
-          <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            Your session expired. Please sign in again.
-          </p>
-        ) : null}
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <Input

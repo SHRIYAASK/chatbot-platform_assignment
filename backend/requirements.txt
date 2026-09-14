@@ -19,3 +19,4 @@ python-docx==1.1.2
 livekit-api==1.2.1
 livekit-agents==1.6.10
 livekit-plugins-sarvam==1.6.10
+livekit-plugins-silero==1.6.10

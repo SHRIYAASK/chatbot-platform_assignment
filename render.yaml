@@ -1,8 +1,11 @@
-# Render Blueprint — backend API + PostgreSQL
+# Render Blueprint — backend API + voice worker + PostgreSQL
 # Docs: https://render.com/docs/blueprint-spec
 #
 # For an existing Render project, copy these env vars into the dashboard instead
 # of creating duplicate services from this file.
+#
+# Voice on Starter: run the LiveKit worker as a separate background worker so the
+# API web service stays responsive (embedded worker on one Starter box overloads CPU).
 
 services:
   - type: web
@@ -27,7 +30,7 @@ services:
       - key: MODERATION_ENABLED
         value: true
       - key: VOICE_AGENT_ENABLED
-        value: true
+        value: false
       - key: VOICE_API_BASE_URL
         value: http://127.0.0.1:${PORT}
       - key: CORS_ORIGINS
@@ -51,7 +54,43 @@ services:
         sync: false
       - key: LIVEKIT_API_SECRET
         sync: false
+
+  - type: worker
+    name: chatbot-platform-voice-worker
+    runtime: docker
+    plan: starter
+    region: singapore
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    envVars:
+      - key: SERVICE_MODE
+        value: voice-worker
+      - key: ENVIRONMENT
+        value: production
+      - key: RAG_ENABLED
+        value: false
+      - key: VOICE_AGENT_LOW_RESOURCES
+        value: true
+      - key: VOICE_API_BASE_URL
+        value: http://chatbot-platform-api:10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: chatbot-platform-db
+          property: connectionString
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: chatbot-platform-api
+          envVarKey: SECRET_KEY
+      - key: LIVEKIT_URL
+        sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
       - key: SARVAM_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
         sync: false
 
 databases:

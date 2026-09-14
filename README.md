@@ -332,7 +332,8 @@ From [`backend/app/core/config.py`](backend/app/core/config.py).
 | `LIVEKIT_API_SECRET` | No | `""` | LiveKit API secret (voice) |
 | `SARVAM_API_KEY` | No | `""` | Sarvam key (embedded voice worker) |
 | `VOICE_API_BASE_URL` | No | `http://127.0.0.1:8002` | API base URL the voice worker calls for SSE (not `DATABASE_URL`) |
-| `VOICE_AGENT_ENABLED` | No | `true` | Start embedded LiveKit worker with the API |
+| `VOICE_AGENT_ENABLED` | No | `true` | Embedded worker locally; `false` on Render web when using a separate worker |
+| `SERVICE_MODE` | Worker only | — | Set `voice-worker` on Render background worker service |
 
 See [`backend/.env.example`](backend/.env.example) for all settings (`GROQ_*`, `EMBEDDING_*`, `DB_POOL_*`, etc.).
 
@@ -459,19 +460,37 @@ New feature endpoints:
 | `ENVIRONMENT` | Yes | `production` |
 | `DATABASE_URL` | Yes | From linked Postgres (auto) |
 | `DATABASE_EXTERNAL_URL` | Alt | Only if internal URL fails — External URL with `?sslmode=require` |
-| `SECRET_KEY` | Yes | Random string ≥ 32 chars |
 | `GROQ_API_KEY` | Yes | Groq API key |
 | `EMBEDDING_API_KEY` | Yes* | Hugging Face token (*if `RAG_ENABLED=true`) |
-| `CORS_ORIGINS` | Yes | `https://your-app.vercel.app` |
+| `CORS_ORIGINS` | Web | `https://your-app.vercel.app` (exact origin, no trailing slash) |
 | `USE_PGVECTOR` | Yes | `true` |
 | `AUTO_MIGRATE` | Yes | `false` (migrations run in `entrypoint.sh`) |
-| `VOICE_API_BASE_URL` | Yes | `http://127.0.0.1:${PORT}` |
-| `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `SARVAM_API_KEY` | Voice | LiveKit + Sarvam credentials |
-| `VOICE_AGENT_ENABLED` | No | `true` (embedded worker) |
+| `VOICE_API_BASE_URL` | Web | `http://127.0.0.1:${PORT}` (loopback for token metadata; not `DATABASE_URL`) |
+| `SECRET_KEY` | Web + worker | **Fixed** random string ≥ 32 chars — do not regenerate on every deploy |
+| `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | Web + worker | LiveKit Cloud credentials |
+| `SARVAM_API_KEY` | Voice worker | Sarvam STT/TTS (not required on web if worker is split) |
+| `VOICE_AGENT_ENABLED` | Web | `false` on Render Starter when using a separate voice worker |
 
-5. Deploy. Logs should show `Database is ready.` then `registered worker` (if voice is configured).
+5. Deploy the **web** service. Logs should show `Database is ready.` and **no** `Starting embedded voice agent worker` when `VOICE_AGENT_ENABLED=false`.
 
 A reference blueprint is in [`render.yaml`](render.yaml). **Link Postgres** to the web service and use the **Internal Database URL** (hostname `dpg-*-a`, no SSL). The API starts even if the DB is briefly unavailable; `/health/ready` reports database status.
+
+#### Render Starter — separate voice worker (recommended)
+
+On a **Starter** web instance, do **not** run the embedded LiveKit worker with the API (CPU/RAM contention causes CORS-like browser errors and agents that never join).
+
+1. Create a **Background Worker** from the same repo (`backend/Dockerfile`) or sync [`render.yaml`](render.yaml) (service `chatbot-platform-voice-worker`).
+2. Set on the worker:
+   - `SERVICE_MODE=voice-worker` (starts `python -m app.modules.voice.worker start` via [`entrypoint.sh`](backend/entrypoint.sh))
+   - `VOICE_API_BASE_URL=http://chatbot-platform-api:10000` (private network hostname of your **web** service; enable private network on both services, same region)
+   - Same `DATABASE_URL`, `SECRET_KEY` (must match web), `LIVEKIT_*`, `SARVAM_API_KEY`, `GROQ_API_KEY`
+   - `RAG_ENABLED=false` (worker does not need embeddings)
+3. On the **web** service: `VOICE_AGENT_ENABLED=false`.
+4. After deploy, worker logs should show `registered worker` with `agent_name=chatbot-voice-agent` and **not** `worker is at full capacity`. On a voice call: `Joining voice room for project=...`.
+
+**Alternative:** upgrade the web service to **Standard (2GB+)** and keep `VOICE_AGENT_ENABLED=true` with `VOICE_API_BASE_URL=http://127.0.0.1:${PORT}` (single container).
+
+**CORS errors in the browser** when the API is overloaded or waking from sleep often show as “No Access-Control-Allow-Origin” even though the app allows your Vercel origin — fix API stability first (split worker or upgrade plan), then confirm `CORS_ORIGINS` in the Render dashboard matches your Vercel URL.
 
 ### Vercel — frontend
 
@@ -490,5 +509,5 @@ A reference blueprint is in [`render.yaml`](render.yaml). **Link Postgres** to t
 ### Production notes
 
 - **File uploads** use local disk on the API container; originals may not survive redeploys. RAG embeddings persist in Postgres.
-- **Voice** runs inside the backend container (no separate `voice-agent` process).
+- **Voice** locally: embedded worker in the API process. **Production (Starter):** use a separate Render background worker (`SERVICE_MODE=voice-worker`) or a larger web plan with `VOICE_AGENT_ENABLED=true`.
 - Health checks: `/health/live` (liveness), `/health/ready` (database).

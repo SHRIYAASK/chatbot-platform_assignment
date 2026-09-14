@@ -4,6 +4,12 @@ PORT="${PORT:-8002}"
 export VOICE_API_BASE_URL="${VOICE_API_BASE_URL:-http://127.0.0.1:${PORT}}"
 DATABASE_URL_FILE="/tmp/working_database_url"
 
+if [ "${SERVICE_MODE}" = "voice-worker" ]; then
+  echo "Starting LiveKit voice worker (SERVICE_MODE=voice-worker)"
+  echo "Voice API base URL: ${VOICE_API_BASE_URL}"
+  exec python -m app.modules.voice.worker start
+fi
+
 rm -f "$DATABASE_URL_FILE"
 
 echo "Checking database connectivity..."

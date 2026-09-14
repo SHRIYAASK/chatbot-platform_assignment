@@ -25,6 +25,14 @@ export function mapApiError(status, detail, fallbackMessage) {
 export function mapNetworkError(error, fallbackMessage = "An unexpected error occurred.") {
   if (!error.response) {
     const apiUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:8002";
+    const code = error.code || "";
+    if (code === "ERR_NETWORK" || error.message === "Network Error") {
+      return (
+        `Cannot reach the API at ${apiUrl}. ` +
+        "On Render this often means the service is waking up or overloaded — wait a moment and refresh. " +
+        "If voice fails, ensure the separate voice worker is running."
+      );
+    }
     return `Cannot reach the backend at ${apiUrl}. Check that the API is running and VITE_API_URL is set on Vercel.`;
   }
 

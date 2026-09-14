@@ -4,13 +4,13 @@
 
 ## Live demo
 
-Set URLs in your deployment dashboards; the frontend landing page at `/` explains architecture for reviewers (use **Try Synora** to open the app).
+The landing page at `/` covers architecture; **Try Synora** opens the app (`/login` / `/dashboard`).
 
 | Service | URL |
 |---------|-----|
-| Frontend (Vercel) | `https://<your-app>.vercel.app` — marketing at `/`, app at `/login` and `/dashboard` |
-| Backend API (Railway) | `https://<your-service>.up.railway.app` — set `VITE_API_URL` to this on Vercel |
-| API docs | `{VITE_API_URL}/docs` |
+| Frontend (Vercel) | https://chatbot-platform-assignment-yijy.vercel.app/ |
+| Backend API (Railway) | https://chatbot-platform-api-production.up.railway.app |
+| API docs | https://chatbot-platform-api-production.up.railway.app/docs |
 
 ## Features
 

@@ -190,13 +190,12 @@ async def entrypoint(ctx: agents.JobContext):
         model="bulbul:v3",
         target_language_code=DEFAULT_LANGUAGE,
         speaker="shubh",
+        api_key=os.environ.get("SARVAM_API_KEY"),
     )
     stt = sarvam.STT(
-        model="saaras:v3",
-        mode="transcribe",
+        model="saarika:v2.5",
         language=DEFAULT_LANGUAGE,
-        flush_signal=True,
-        high_vad_sensitivity=True,
+        api_key=os.environ.get("SARVAM_API_KEY"),
     )
     vad = inference.VAD(
         model="silero",

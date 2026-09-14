@@ -101,6 +101,38 @@ def _parse_metadata(ctx: agents.JobContext) -> BackendContext:
         if parsed:
             return parsed
 
+    # Fallback: recover context directly from room name (e.g. conv-5)
+    room_name = getattr(ctx.room, "name", None) or ""
+    if room_name.startswith("conv-"):
+        try:
+            conversation_id = int(room_name.replace("conv-", ""))
+            from app.core.database import SessionLocal
+            from app.modules.chat.models.conversation import Conversation
+            from app.modules.voice.services.service_token import create_voice_service_token
+
+            with SessionLocal() as db:
+                conv = db.query(Conversation).filter(Conversation.id == conversation_id).first()
+                if conv:
+                    service_token = create_voice_service_token(
+                        user_id=conv.user_id,
+                        project_id=conv.project_id,
+                        conversation_id=conv.id,
+                    )
+                    logger.info(
+                        "Recovered voice context from room %s: project=%s conversation=%s",
+                        room_name,
+                        conv.project_id,
+                        conv.id,
+                    )
+                    return BackendContext(
+                        backend_url=settings.VOICE_API_BASE_URL.rstrip("/"),
+                        project_id=conv.project_id,
+                        conversation_id=conv.id,
+                        service_token=service_token,
+                    )
+        except Exception:
+            logger.exception("Failed to recover conversation context from room name %s", room_name)
+
     raise ValueError(
         "Voice agent metadata is missing. "
         "Join via POST /voice-token so the room includes project/conversation context."
@@ -114,6 +146,16 @@ def _latest_user_message(chat_ctx: llm.ChatContext) -> str | None:
             if text and text.strip():
                 return text.strip()
     return None
+
+
+def _get_runtime_backend_url() -> str:
+    port = (os.environ.get("PORT") or "8002").strip() or "8002"
+    url = (os.environ.get("VOICE_API_BASE_URL") or "").strip()
+    if "${PORT}" in url or "$PORT" in url:
+        return url.replace("${PORT}", port).replace("$PORT", port).rstrip("/")
+    if not url or "127.0.0.1" in url or "localhost" in url:
+        return f"http://127.0.0.1:{port}"
+    return url.rstrip("/")
 
 
 class BackendVoiceAgent(Agent):
@@ -152,9 +194,10 @@ class BackendVoiceAgent(Agent):
             user_message[:80],
         )
 
+        backend_url = _get_runtime_backend_url()
         try:
             async for chunk in stream_chat(
-                backend_url=self._backend_ctx.backend_url,
+                backend_url=backend_url,
                 project_id=self._backend_ctx.project_id,
                 conversation_id=self._backend_ctx.conversation_id,
                 service_token=self._backend_ctx.service_token,
@@ -162,11 +205,33 @@ class BackendVoiceAgent(Agent):
             ):
                 if chunk:
                     yield chunk
+            return
+        except Exception:
+            logger.warning(
+                "HTTP stream_chat failed for conversation=%s backend=%s; falling back to in-process ChatService",
+                self._backend_ctx.conversation_id,
+                backend_url,
+            )
+
+        # In-process direct fallback
+        try:
+            from app.modules.chat.services.chat_service import ChatService
+            from app.modules.voice.services.service_token import verify_voice_service_token
+
+            context = verify_voice_service_token(self._backend_ctx.service_token)
+            async for chunk in ChatService.stream_message(
+                user_id=context.user_id,
+                project_id=self._backend_ctx.project_id,
+                conversation_id=self._backend_ctx.conversation_id,
+                content=user_message,
+            ):
+                if chunk:
+                    yield chunk
+            return
         except Exception:
             logger.exception(
-                "Voice backend stream failed for conversation=%s backend=%s",
+                "Direct ChatService stream fallback also failed for conversation=%s",
                 self._backend_ctx.conversation_id,
-                self._backend_ctx.backend_url,
             )
             yield "Sorry, I could not generate a response. Please try again."
 

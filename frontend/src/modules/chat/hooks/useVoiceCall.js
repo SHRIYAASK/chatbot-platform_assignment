@@ -17,7 +17,7 @@ function attachAudioTrack(track, elements) {
   element.playsInline = true;
   document.body.appendChild(element);
   elements.add(element);
-  element.play?.().catch(() => {});
+  element.play?.().catch(() => { });
 }
 
 function detachAudioTrack(track, elements) {
@@ -130,8 +130,8 @@ export function useVoiceCall(projectId, conversationId, { onTurnComplete } = {})
       const detail = connectError?.response?.data?.detail;
       setError(
         (typeof detail === "string" && detail) ||
-          connectError.message ||
-          "Voice call failed.",
+        connectError.message ||
+        "Voice call failed.",
       );
       await disconnect();
     } finally {

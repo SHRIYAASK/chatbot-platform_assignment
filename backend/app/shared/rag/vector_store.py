@@ -78,7 +78,7 @@ class VectorStore:
     ) -> list[StoredChunkMatch]:
         from pgvector.sqlalchemy import Vector
 
-        distance = DocumentChunk.embedding.cosine_distance(query_embedding)
+        distance = DocumentChunk.embedding.cast(Vector(self.dimension)).cosine_distance(query_embedding)
         rows = (
             self._db.query(DocumentChunk, distance.label("distance"))
             .filter(

@@ -172,14 +172,12 @@ class BackendVoiceAgent(Agent):
 
 
 def _agent_server_options() -> dict[str, Any]:
-    """Render starter instances have little CPU/RAM; default LiveKit settings mark the worker full."""
-    if os.environ.get("RENDER") or os.environ.get("VOICE_AGENT_LOW_RESOURCES", "").lower() == "true":
-        return {
-            "num_idle_processes": 0,
-            "load_threshold": 0.99,
-            "initialize_process_timeout": 120.0,
-        }
-    return {}
+    """Ensure minimal RAM usage so the worker stays well within 512MB container limits."""
+    return {
+        "num_idle_processes": 0,
+        "load_threshold": 0.99,
+        "initialize_process_timeout": 120.0,
+    }
 
 
 server = AgentServer(**_agent_server_options())

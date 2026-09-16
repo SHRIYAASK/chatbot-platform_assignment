@@ -7,7 +7,7 @@ export default function Navbar({ user, onLogout }) {
   const showBackButton = location.pathname.startsWith("/projects/");
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/85 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-stone-200/80 bg-[#f7f5f2]/90 backdrop-blur-md">
       <div className="flex w-full items-center justify-between px-4 py-3.5 sm:px-6">
         <div className="flex items-center gap-3">
           {showBackButton ? (
@@ -19,8 +19,8 @@ export default function Navbar({ user, onLogout }) {
               <ArrowLeft className="h-5 w-5" />
             </Link>
           ) : null}
-          <Link to="/dashboard" className="flex items-center gap-2 text-lg font-semibold text-brand-700">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-600 text-sm font-bold text-white shadow-sm">
+          <Link to="/dashboard" className="flex items-center gap-2 text-lg font-semibold text-brand-800">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-700 text-sm font-bold text-[#f7f5f2] shadow-sm">
               S
             </span>
             {PRODUCT_NAME}

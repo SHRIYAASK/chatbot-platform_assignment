@@ -2,37 +2,41 @@ export const PRODUCT_NAME = "Synora";
 
 export const TAGLINE = "Multi-Tenant AI Assistant & Knowledge Platform";
 
-export const ELEVATOR_PITCH =
-  "Full-stack platform for personalized AI assistants: custom system prompts, document-based RAG, persistent conversational memory, and real-time WebRTC voice—powered by React, FastAPI, Groq, PostgreSQL/pgvector, and LiveKit + Sarvam.";
+export const GITHUB_REPO_URL =
+  import.meta.env.VITE_GITHUB_REPO_URL?.trim() ||
+  "https://github.com/SHRIYAASK/chatbot-platform_assignment";
 
-export const DEMO_STEPS = [
+export const LANDING_FEATURES = [
   {
-    title: "Auth & workspace",
-    detail: "Register or log in, then create a project with per-user data isolation.",
+    title: "Secure workspaces",
+    detail: "JWT authentication with per-user data isolation across projects and chats.",
+  },
+  {
+    title: "Custom AI projects",
+    detail: "Create assistants with your own system prompt and Groq model settings.",
   },
   {
     title: "Enhance with AI",
-    detail: "Draft a short description, rewrite with Groq, preview, and confirm before save.",
+    detail: "Rewrite project instructions, preview, and confirm before anything is saved.",
+  },
+  {
+    title: "Threaded conversations",
+    detail: "Keep persistent chat history for every project conversation.",
   },
   {
     title: "Knowledge & RAG",
-    detail: "Upload PDFs or docs, wait for indexing, then ask questions grounded in your files.",
+    detail: "Upload PDF, TXT, MD, JSON, or DOCX files and retrieve grounded answers.",
   },
   {
-    title: "Voice (optional)",
-    detail: "Start a WebRTC call; the embedded worker uses the same ChatService as text chat.",
+    title: "Document-grounded replies",
+    detail: "Vector search over your files so answers stay tied to uploaded sources.",
   },
-];
-
-export const TECH_STACK = [
-  "React 18",
-  "Vite",
-  "Tailwind CSS",
-  "FastAPI",
-  "PostgreSQL",
-  "pgvector",
-  "Groq",
-  "Hugging Face Embeddings",
-  "LiveKit",
-  "Sarvam STT/TTS",
+  {
+    title: "Guardrails",
+    detail: "Configurable input and output moderation before content reaches the user.",
+  },
+  {
+    title: "Voice conversations",
+    detail: "Optional LiveKit + Sarvam calls that share the same chat pipeline as text.",
+  },
 ];

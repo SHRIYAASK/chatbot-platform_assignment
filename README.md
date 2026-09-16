@@ -4,7 +4,7 @@
 
 ## Live demo
 
-The landing page at `/` covers architecture; **Try Synora** opens the app (`/login` / `/dashboard`).
+The landing page at `/` lists product features; **Try Synora** opens the app (`/login` / `/dashboard`).
 
 | Service | URL |
 |---------|-----|

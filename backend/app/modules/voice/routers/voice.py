@@ -100,6 +100,7 @@ async def stream_voice_message(
                 project_id=project_id,
                 conversation_id=conversation_id,
                 content=message_data.content,
+                response_language=message_data.response_language,
             ):
                 yield f"data: {json.dumps({'delta': chunk})}\n\n"
             yield "data: [DONE]\n\n"

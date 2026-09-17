@@ -14,6 +14,7 @@ async def stream_chat(
     conversation_id: int,
     service_token: str,
     content: str,
+    response_language: str | None = None,
 ) -> AsyncIterator[str]:
     url = (
         f"{backend_url.rstrip('/')}/projects/{project_id}/conversations/"
@@ -30,7 +31,7 @@ async def stream_chat(
             async with client.stream(
                 "POST",
                 url,
-                json={"content": content},
+                json={"content": content, "response_language": response_language},
                 headers=headers,
             ) as response:
                 if response.status_code >= 400:

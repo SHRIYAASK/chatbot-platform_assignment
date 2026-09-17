@@ -91,6 +91,8 @@ class VoiceTokenService:
 
         await VoiceTokenService._dispatch_agent(room_name, metadata_json)
 
+        # Dispatch only via create_dispatch above. RoomAgentDispatch on the JWT would
+        # spawn a second agent when the room is first created (duplicate transcripts).
         access_token = (
             api.AccessToken(settings.LIVEKIT_API_KEY, settings.LIVEKIT_API_SECRET)
             .with_identity(f"user-{current_user.id}")
@@ -102,16 +104,6 @@ class VoiceTokenService:
                     room=room_name,
                     can_publish=True,
                     can_subscribe=True,
-                )
-            )
-            .with_room_config(
-                api.RoomConfiguration(
-                    agents=[
-                        api.RoomAgentDispatch(
-                            agent_name=VOICE_AGENT_NAME,
-                            metadata=metadata_json,
-                        )
-                    ],
                 )
             )
         )

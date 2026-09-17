@@ -1,7 +1,9 @@
 import asyncio
 import logging
+from collections import defaultdict
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
@@ -25,6 +27,9 @@ from app.shared.guardrails.moderation.service import ModerationService
 from app.shared.rag.embedding_service import get_embedding_service
 
 logger = logging.getLogger(__name__)
+
+VOICE_DUPLICATE_WINDOW_SECONDS = 20
+_voice_stream_locks: defaultdict[int, asyncio.Lock] = defaultdict(asyncio.Lock)
 
 
 @dataclass
@@ -79,6 +84,7 @@ class ChatService:
         project_id: int,
         conversation_id: int,
         content: str,
+        response_language: str | None = None,
     ) -> PreparedChatRequest:
         db = SessionLocal()
         try:
@@ -103,6 +109,7 @@ class ChatService:
                 history,
                 content,
                 rag_context=rag_context,
+                response_language=response_language,
             )
 
             user_message = ConversationService.save_message(
@@ -266,14 +273,42 @@ class ChatService:
         return prepared.user_message, assistant_message
 
     @staticmethod
-    async def stream_message(
+    def _recent_duplicate_voice_user(
+        conversation_id: int,
+        content: str,
+        *,
+        window_seconds: int = VOICE_DUPLICATE_WINDOW_SECONDS,
+    ) -> bool:
+        db = SessionLocal()
+        try:
+            cutoff = datetime.now(timezone.utc) - timedelta(seconds=window_seconds)
+            duplicate = (
+                db.query(ChatMessage)
+                .filter(
+                    ChatMessage.conversation_id == conversation_id,
+                    ChatMessage.role == "user",
+                    ChatMessage.content == content,
+                )
+                .order_by(ChatMessage.id.desc())
+                .first()
+            )
+            if duplicate is None:
+                return False
+            created_at = duplicate.created_at
+            if created_at.tzinfo is None:
+                created_at = created_at.replace(tzinfo=timezone.utc)
+            return created_at >= cutoff
+        finally:
+            db.close()
+
+    @staticmethod
+    async def _stream_message_impl(
         user_id: int,
         project_id: int,
         conversation_id: int,
         content: str,
+        response_language: str | None,
     ) -> AsyncIterator[str]:
-        content = content.strip()
-
         if settings.MODERATION_ENABLED:
             moderation = await run_sync_db(
                 lambda: ModerationService.check(
@@ -301,6 +336,7 @@ class ChatService:
                 project_id,
                 conversation_id,
                 content,
+                response_language=response_language,
             )
         )
 
@@ -335,3 +371,48 @@ class ChatService:
                 None,
             )
         )
+
+    @staticmethod
+    async def stream_message(
+        user_id: int,
+        project_id: int,
+        conversation_id: int,
+        content: str,
+        response_language: str | None = None,
+    ) -> AsyncIterator[str]:
+        content = content.strip()
+
+        if response_language is None:
+            async for chunk in ChatService._stream_message_impl(
+                user_id,
+                project_id,
+                conversation_id,
+                content,
+                response_language,
+            ):
+                yield chunk
+            return
+
+        lock = _voice_stream_locks[conversation_id]
+        async with lock:
+            is_duplicate = await run_sync_db(
+                lambda: ChatService._recent_duplicate_voice_user(
+                    conversation_id,
+                    content,
+                )
+            )
+            if is_duplicate:
+                logger.info(
+                    "Skipping duplicate voice turn for conversation=%s",
+                    conversation_id,
+                )
+                return
+
+            async for chunk in ChatService._stream_message_impl(
+                user_id,
+                project_id,
+                conversation_id,
+                content,
+                response_language,
+            ):
+                yield chunk

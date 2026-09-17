@@ -9,3 +9,4 @@ class VoiceTokenResponse(BaseModel):
 
 class VoiceMessageCreate(BaseModel):
     content: str = Field(..., min_length=1, max_length=10000)
+    response_language: str | None = Field(default=None, max_length=16)

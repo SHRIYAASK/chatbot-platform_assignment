@@ -64,3 +64,16 @@ def test_build_chat_messages_adds_rag_as_separate_system_message():
         "content": "Use the following project document excerpts.",
     }
     assert messages[2] == {"role": "user", "content": "Explain contracts."}
+
+
+def test_build_chat_messages_adds_spoken_language_instruction():
+    messages = build_chat_messages(
+        "You are a helpful assistant.",
+        [],
+        "என்ன பிரச்சனை",
+        response_language="ta-IN",
+    )
+
+    assert messages[1]["role"] == "system"
+    assert "Tamil" in messages[1]["content"]
+    assert messages[2] == {"role": "user", "content": "என்ன பிரச்சனை"}

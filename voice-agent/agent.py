@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-import re
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import AsyncIterable
@@ -14,6 +14,7 @@ from livekit.agents.types import DEFAULT_API_CONNECT_OPTIONS, APIConnectOptions,
 from livekit.plugins import sarvam
 
 from backend_client import stream_chat
+from language import DEFAULT_LANGUAGE, STT_LANGUAGE, detect_language
 
 _ROOT = Path(__file__).resolve().parent
 load_dotenv(_ROOT / ".env")
@@ -23,8 +24,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("voice-agent")
 
 AGENT_NAME = "chatbot-voice-agent"
-DEFAULT_LANGUAGE = "en-IN"
-INDIC_SCRIPT = re.compile(r"[\u0900-\u097F\u0980-\u09FF\u0A00-\u0A7F\u0A80-\u0AFF]")
 
 
 @dataclass(frozen=True)
@@ -67,12 +66,6 @@ class PassthroughLLM(LLM):
             tools=tools or [],
             conn_options=conn_options,
         )
-
-
-def _detect_language(text: str) -> str:
-    if INDIC_SCRIPT.search(text):
-        return "hi-IN"
-    return DEFAULT_LANGUAGE
 
 
 def _try_parse_metadata(raw: str | None) -> BackendContext | None:
@@ -136,6 +129,18 @@ class BackendVoiceAgent(Agent):
         )
         self._backend_ctx = backend_ctx
         self._tts = tts
+        self._last_turn: tuple[str, float] | None = None
+
+    def _should_skip_duplicate_turn(self, user_message: str) -> bool:
+        now = time.monotonic()
+        if (
+            self._last_turn
+            and self._last_turn[0] == user_message
+            and now - self._last_turn[1] < 15.0
+        ):
+            return True
+        self._last_turn = (user_message, now)
+        return False
 
     async def llm_node(
         self,
@@ -148,15 +153,23 @@ class BackendVoiceAgent(Agent):
             logger.warning("llm_node invoked without a user transcript")
             return
 
-        language = _detect_language(user_message)
+        if self._should_skip_duplicate_turn(user_message):
+            logger.info(
+                "Skipping duplicate voice transcript for conversation=%s",
+                self._backend_ctx.conversation_id,
+            )
+            return
+
+        language = detect_language(user_message)
         try:
             self._tts.update_options(target_language_code=language)
         except Exception:
             logger.exception("Failed to update TTS language to %s", language)
 
         logger.info(
-            "Streaming chat for conversation=%s: %s",
+            "Streaming chat for conversation=%s language=%s: %s",
             self._backend_ctx.conversation_id,
+            language,
             user_message[:80],
         )
 
@@ -166,6 +179,7 @@ class BackendVoiceAgent(Agent):
             conversation_id=self._backend_ctx.conversation_id,
             service_token=self._backend_ctx.service_token,
             content=user_message,
+            response_language=language,
         ):
             if chunk:
                 yield chunk
@@ -194,7 +208,8 @@ async def entrypoint(ctx: agents.JobContext):
     )
     stt = sarvam.STT(
         model="saarika:v2.5",
-        language=DEFAULT_LANGUAGE,
+        language=STT_LANGUAGE,
+        mode="transcribe",
         api_key=os.environ.get("SARVAM_API_KEY"),
     )
     vad = inference.VAD(

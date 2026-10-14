@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 from app.core.config import settings
+from app.modules.prompt_management.models.prompt import Prompt  # noqa: F401
 
 
 class Project(Base):

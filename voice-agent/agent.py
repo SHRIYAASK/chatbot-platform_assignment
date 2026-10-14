@@ -25,6 +25,10 @@ logger = logging.getLogger("voice-agent")
 
 AGENT_NAME = "chatbot-voice-agent"
 
+VOICE_ENDPOINT_MIN_DELAY_S = 1.5
+VOICE_ENDPOINT_MAX_DELAY_S = 8.0
+VOICE_VAD_MIN_SILENCE_S = 1.0
+
 
 @dataclass(frozen=True)
 class BackendContext:
@@ -215,7 +219,7 @@ async def entrypoint(ctx: agents.JobContext):
     vad = inference.VAD(
         model="silero",
         min_speech_duration=0.05,
-        min_silence_duration=0.4,
+        min_silence_duration=VOICE_VAD_MIN_SILENCE_S,
         prefix_padding_duration=0.3,
         activation_threshold=0.5,
     )
@@ -227,7 +231,10 @@ async def entrypoint(ctx: agents.JobContext):
         vad=vad,
         turn_handling={
             "turn_detection": "stt",
-            "endpointing": {"min_delay": 0.6, "max_delay": 3.0},
+            "endpointing": {
+                "min_delay": VOICE_ENDPOINT_MIN_DELAY_S,
+                "max_delay": VOICE_ENDPOINT_MAX_DELAY_S,
+            },
         },
     )
 

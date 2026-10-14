@@ -62,6 +62,7 @@ async def lifespan(app: FastAPI):
     if settings.AUTO_MIGRATE:
         try:
             upgrade_head()
+            configure_logging()
         except Exception:
             logger.exception("Automatic database migration failed.")
             raise

@@ -35,6 +35,9 @@ class Retriever:
         if not normalized:
             return []
 
+        if not self._has_chunks(project_id):
+            return []
+
         query_embedding = self._embedding_service.embed_texts([normalized])[0]
         matches = self._vector_store.search_similar_children(
             project_id=project_id,
@@ -42,6 +45,19 @@ class Retriever:
             top_k=self._top_k,
         )
         return self._expand_parent_context(matches)
+
+    def _has_chunks(self, project_id: int) -> bool:
+        from app.modules.chat.models.document_chunk import DocumentChunk
+        return (
+            self._db.query(DocumentChunk.id)
+            .filter(
+                DocumentChunk.project_id == project_id,
+                DocumentChunk.chunk_type == "child",
+                DocumentChunk.embedding.isnot(None),
+            )
+            .first()
+            is not None
+        )
 
     @staticmethod
     def _expand_parent_context(matches: list[StoredChunkMatch]) -> list[RetrievedContext]:
